@@ -225,31 +225,44 @@ window.Render = {
     ctx.fillStyle = PX.timberLite;
     ctx.fillRect(62 * scale, 40 * scale, 14 * scale, 3 * scale);
 
-    const birdSprite = state.birdAlive ? BIRD : BIRD_DEAD;
-    const birdPalette = state.birdAlive
-      ? { Y: PX.canary, E: PX.eye, B: PX.beak, D: PX.canaryDark }
-      : { X: "#6a6a6a", x: "#3a3a3a", "+": PX.danger };
-
-    // bobbing
-    const bob = state.birdAlive ? (state.tick % 30 < 15 ? 0 : -1) : 1;
-    blitSprite(ctx, birdSprite, 62, 28 + bob, scale, birdPalette);
-
-    if (!state.birdAlive) {
-      // alarm rays
-      ctx.strokeStyle = PX.danger;
-      ctx.lineWidth = 2;
-      const cx = 68 * scale;
-      const cy = 32 * scale;
-      for (let a = 0; a < 8; a++) {
-        const ang = (Math.PI * 2 * a) / 8 + state.tick * 0.1;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28);
-        ctx.stroke();
-      }
+    if (!state.guardOn) {
+      // empty perch + "NO CANARY" placard when protector disabled
+      ctx.fillStyle = PX.muted || "#9a8770";
+      ctx.fillStyle = "#9a8770";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText("NO CANARY", 52 * scale, 34 * scale);
       ctx.fillStyle = PX.danger;
-      ctx.font = "bold 14px monospace";
-      ctx.fillText("! ALARM !", 50 * scale, 14 * scale);
+      ctx.font = "bold 12px monospace";
+      if (state.exitCorrupted) {
+        ctx.fillText("EXIT LOST", 52 * scale, 14 * scale);
+      }
+    } else {
+      const birdSprite = state.birdAlive ? BIRD : BIRD_DEAD;
+      const birdPalette = state.birdAlive
+        ? { Y: PX.canary, E: PX.eye, B: PX.beak, D: PX.canaryDark }
+        : { X: "#6a6a6a", x: "#3a3a3a", "+": PX.danger };
+
+      // bobbing
+      const bob = state.birdAlive ? (state.tick % 30 < 15 ? 0 : -1) : 1;
+      blitSprite(ctx, birdSprite, 62, 28 + bob, scale, birdPalette);
+
+      if (!state.birdAlive) {
+        // alarm rays
+        ctx.strokeStyle = PX.danger;
+        ctx.lineWidth = 2;
+        const cx = 68 * scale;
+        const cy = 32 * scale;
+        for (let a = 0; a < 8; a++) {
+          const ang = (Math.PI * 2 * a) / 8 + state.tick * 0.1;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(ang) * 28, cy + Math.sin(ang) * 28);
+          ctx.stroke();
+        }
+        ctx.fillStyle = PX.danger;
+        ctx.font = "bold 14px monospace";
+        ctx.fillText("! ALARM !", 50 * scale, 14 * scale);
+      }
     }
 
     if (state.escaped && state.birdAlive) {

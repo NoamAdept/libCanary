@@ -80,8 +80,13 @@
     const lvl = currentLevel();
     levelLabel.textContent = `LV.${lvl.id} ${lvl.name}`;
     objectiveEl.textContent = lvl.objective;
-    canaryStatus.textContent = state.birdAlive ? "BIRD: ALIVE" : "BIRD: DEAD";
-    canaryStatus.className = `status ${state.birdAlive ? "alive" : "dead"}`;
+    if (!state.guardOn) {
+      canaryStatus.textContent = "BIRD: NONE";
+      canaryStatus.className = "status off";
+    } else {
+      canaryStatus.textContent = state.birdAlive ? "BIRD: ALIVE" : "BIRD: DEAD";
+      canaryStatus.className = `status ${state.birdAlive ? "alive" : "dead"}`;
+    }
     guardStatus.textContent = state.guardOn ? "GUARD: ON" : "GUARD: OFF";
     guardStatus.className = `status ${state.guardOn ? "on" : "off"}`;
     $("mine-mode").textContent = lvl.highlightStack ? "MAPPED" : "METAPHOR";
