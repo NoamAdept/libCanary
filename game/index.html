@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CANARY MINE — Learn Stack Canaries</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="crt" class="crt">
+    <!-- TITLE SCREEN -->
+    <section id="title-screen" class="screen active" aria-label="Title screen">
+      <div class="title-bg" aria-hidden="true"></div>
+      <div class="title-content">
+        <p class="blink insert-coin">INSERT CURIOSITY</p>
+        <h1 class="brand">CANARY<br />MINE</h1>
+        <p class="tagline">An 8-bit expedition into stack canaries</p>
+        <canvas id="title-bird" width="96" height="96" aria-hidden="true"></canvas>
+        <button id="btn-start" class="pixel-btn primary" type="button">PRESS START</button>
+        <p class="hint">Learn why a tiny yellow bird saves your return address</p>
+      </div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="game-screen" class="screen" aria-label="Game">
+      <header class="hud">
+        <div class="hud-left">
+          <span class="brand-mini">CANARY MINE</span>
+          <span id="level-label" class="level-chip">LV.1</span>
+        </div>
+        <div class="hud-center">
+          <p id="objective" class="objective">Meet the canary.</p>
+        </div>
+        <div class="hud-right">
+          <span id="canary-status" class="status alive">BIRD: ALIVE</span>
+          <span id="guard-status" class="status on">GUARD: ON</span>
+        </div>
+      </header>
+
+      <div class="stage">
+        <div class="panel mine-panel">
+          <div class="panel-title">
+            <span>◆ COAL MINE</span>
+            <span id="mine-mode" class="panel-sub">METAPHOR</span>
+          </div>
+          <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Pixel coal mine with canary"></canvas>
+          <div class="legend">
+            <span><i class="swatch buffer"></i>BUFFER</span>
+            <span><i class="swatch canary"></i>CANARY</span>
+            <span><i class="swatch exit"></i>EXIT / RET</span>
+          </div>
+        </div>
+
+        <div class="panel stack-panel">
+          <div class="panel-title">
+            <span>◆ STACK FRAME</span>
+            <span id="stack-mode" class="panel-sub">MEMORY</span>
+          </div>
+          <div id="stack-view" class="stack-view" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="panel terminal-panel">
+        <div class="panel-title">
+          <span>◆ TERMINAL</span>
+          <span class="panel-sub">./vulnerable</span>
+        </div>
+        <div id="terminal" class="terminal" aria-live="polite">
+          <div id="term-output" class="term-output"></div>
+          <form id="term-form" class="term-form" autocomplete="off">
+            <label for="term-input" class="sr-only">Command input</label>
+            <span class="prompt">&gt;</span>
+            <input id="term-input" type="text" maxlength="64" spellcheck="false" placeholder="type input then ENTER" />
+          </form>
+        </div>
+      </div>
+
+      <footer class="narrator">
+        <div class="narrator-portrait" aria-hidden="true">
+          <canvas id="foreman" width="48" height="48"></canvas>
+        </div>
+        <div class="narrator-body">
+          <p id="dialogue" class="dialogue">...</p>
+          <div class="actions">
+            <button id="btn-hint" class="pixel-btn" type="button">HINT</button>
+            <button id="btn-reset" class="pixel-btn" type="button">RESET</button>
+            <button id="btn-next" class="pixel-btn primary" type="button" hidden>NEXT LEVEL ▶</button>
+          </div>
+        </div>
+      </footer>
+    </section>
+
+    <!-- WIN SCREEN -->
+    <section id="win-screen" class="screen" aria-label="Victory">
+      <div class="title-content">
+        <p class="blink">MISSION COMPLETE</p>
+        <h1 class="brand small">YOU SAVED<br />THE EXIT</h1>
+        <p class="tagline">A canary dies so the return address doesn't have to.</p>
+        <ul class="takeaways">
+          <li>Buffer grows toward higher addresses</li>
+          <li>Canary sits between buffer and saved return address</li>
+          <li>On function exit, mismatch → abort before hijack</li>
+        </ul>
+        <button id="btn-replay" class="pixel-btn primary" type="button">PLAY AGAIN</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="levels.js"></script>
+  <script src="render.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
