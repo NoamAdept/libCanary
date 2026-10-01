@@ -287,13 +287,15 @@ window.Render = {
    */
   renderStack(container, state) {
     const secret = state.canaryValue;
+    const bufSize = state.bufferSize || 8;
+    const displaySize = Math.min(bufSize, 16);
     const slots = [
       {
         key: "buf",
         addr: "0x7ffe10",
-        label: "buffer[8]",
+        label: `buffer[${bufSize}]`,
         kind: "buffer",
-        bytes: formatBufferBytes(state.inputBytes, BUFFER_SIZE),
+        bytes: formatBufferBytes(state.inputBytes, displaySize),
       },
       {
         key: "can",
@@ -318,9 +320,11 @@ window.Render = {
       },
     ];
 
-    const overflowLen = Math.max(0, state.inputBytes.length - BUFFER_SIZE);
+    const overflowLen = Math.max(0, state.inputBytes.length - bufSize);
+    const offByOne = !!state.offByOne;
+    const nulHazard = !!state.nulHazard;
     // corruption stages: canary at +0..7, rbp +8..15, ret +16..
-    const canCorrupt = state.guardOn && overflowLen > 0;
+    const canCorrupt = state.guardOn && (overflowLen > 0 || offByOne);
     const rbpCorrupt = overflowLen > 8;
     const retCorrupt = overflowLen > 16 || (!state.guardOn && overflowLen > 8);
 
@@ -341,8 +345,8 @@ window.Render = {
       let bytes = slot.bytes;
       if (slot.key === "can" && canCorrupt) {
         el.classList.add("corrupted", "gas");
-        bytes = smashBytes(secret, overflowLen);
-      } else if (slot.key === "can" && state.guardOn && state.inputBytes.length > 0 && overflowLen === 0) {
+        bytes = offByOne ? smashBytes(secret, 1) : smashBytes(secret, overflowLen || 1);
+      } else if (slot.key === "can" && state.guardOn && state.inputBytes.length > 0 && overflowLen === 0 && !offByOne) {
         el.classList.add("safe-fill");
       } else if (slot.key === "rbp" && (rbpCorrupt || (!state.guardOn && overflowLen > 0))) {
         if (!state.guardOn || rbpCorrupt) {
@@ -353,7 +357,8 @@ window.Render = {
         el.classList.add("corrupted");
         bytes = "0xDEAD!!";
       } else if (slot.key === "buf" && state.inputBytes.length > 0) {
-        el.classList.add(overflowLen > 0 ? "gas" : "safe-fill");
+        el.classList.add(overflowLen > 0 || nulHazard || offByOne ? "gas" : "safe-fill");
+        if (nulHazard) bytes = formatBufferBytes(state.inputBytes, displaySize).replace(/\.$/, "?");
         if (state.animating) el.classList.add("filling");
       }
 
@@ -389,4 +394,4 @@ function smashBytes(hex, overflowLen) {
   return chars.join("");
 }
 
-window.BUFFER_SIZE = BUFFER_SIZE;
+window.BUFFER_SIZE = typeof BUFFER_SIZE !== "undefined" ? BUFFER_SIZE : 8;

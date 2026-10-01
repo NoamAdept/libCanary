@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CANARY MINE — Learn Stack Canaries</title>
+  <title>CANARY MINE — 12 C Safety Lessons</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
@@ -17,10 +17,10 @@
       <div class="title-content">
         <p class="blink insert-coin">INSERT CURIOSITY</p>
         <h1 class="brand">CANARY<br />MINE</h1>
-        <p class="tagline">An 8-bit expedition into stack canaries</p>
+        <p class="tagline">12 levels · real C binaries · stack canaries</p>
         <canvas id="title-bird" width="96" height="96" aria-hidden="true"></canvas>
         <button id="btn-start" class="pixel-btn primary" type="button">PRESS START</button>
-        <p class="hint">Learn why a tiny yellow bird saves your return address</p>
+        <p class="hint">Mine metaphor → stack frame → terminal → actual lesson C code</p>
       </div>
     </section>
 
@@ -63,18 +63,31 @@
         </div>
       </div>
 
-      <div class="panel terminal-panel">
-        <div class="panel-title">
-          <span>◆ TERMINAL</span>
-          <span class="panel-sub">./vulnerable</span>
+      <div class="lower-stage">
+        <div class="panel code-panel">
+          <div class="panel-title">
+            <span>◆ C LESSON</span>
+            <span id="code-file" class="panel-sub">L01_safe_copy.c</span>
+          </div>
+          <pre id="code-view" class="code-view" aria-live="polite"></pre>
+          <div class="code-meta">
+            <code id="compile-line" class="compile-line"></code>
+          </div>
         </div>
-        <div id="terminal" class="terminal" aria-live="polite">
-          <div id="term-output" class="term-output"></div>
-          <form id="term-form" class="term-form" autocomplete="off">
-            <label for="term-input" class="sr-only">Command input</label>
-            <span class="prompt">&gt;</span>
-            <input id="term-input" type="text" maxlength="64" spellcheck="false" placeholder="type input then ENTER" />
-          </form>
+
+        <div class="panel terminal-panel">
+          <div class="panel-title">
+            <span>◆ TERMINAL</span>
+            <span id="binary-name" class="panel-sub">./bin/L01_safe_copy</span>
+          </div>
+          <div id="terminal" class="terminal" aria-live="polite">
+            <div id="term-output" class="term-output"></div>
+            <form id="term-form" class="term-form" autocomplete="off">
+              <label for="term-input" class="sr-only">Command input</label>
+              <span class="prompt">&gt;</span>
+              <input id="term-input" type="text" maxlength="64" spellcheck="false" placeholder="type input then ENTER" />
+            </form>
+          </div>
         </div>
       </div>
 
@@ -97,18 +110,20 @@
     <section id="win-screen" class="screen" aria-label="Victory">
       <div class="title-content">
         <p class="blink">MISSION COMPLETE</p>
-        <h1 class="brand small">YOU SAVED<br />THE EXIT</h1>
-        <p class="tagline">A canary dies so the return address doesn't have to.</p>
+        <h1 class="brand small">12 LESSONS<br />CLEARED</h1>
+        <p class="tagline">Real binaries. Real C footguns. Canaries as early warning.</p>
         <ul class="takeaways">
-          <li>Buffer grows toward higher addresses</li>
-          <li>Canary sits between buffer and saved return address</li>
-          <li>On function exit, mismatch → abort before hijack</li>
+          <li>Never gets/strcpy into tiny stacks — bound every copy</li>
+          <li>Canary sits between buffer and return address</li>
+          <li>Epilogue mismatch → abort before hijack</li>
+          <li>Ship: -fstack-protector-strong + _FORTIFY_SOURCE + safe APIs</li>
         </ul>
         <button id="btn-replay" class="pixel-btn primary" type="button">PLAY AGAIN</button>
       </div>
     </section>
   </div>
 
+  <script src="lesson_bundle.js"></script>
   <script src="levels.js"></script>
   <script src="render.js"></script>
   <script src="game.js"></script>

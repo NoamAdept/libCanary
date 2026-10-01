@@ -482,9 +482,67 @@ body {
   margin: 2px 0;
 }
 
+/* ===== LOWER STAGE: CODE + TERMINAL ===== */
+.lower-stage {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  border-bottom: 3px solid var(--timber);
+  min-height: 200px;
+}
+
+.code-panel {
+  border-right: 3px solid var(--timber);
+  min-height: 0;
+}
+
+.code-view {
+  margin: 0;
+  padding: 8px 10px;
+  flex: 1;
+  overflow: auto;
+  max-height: 180px;
+  background: #0a0908;
+  color: #c8b89a;
+  font-family: "VT323", "Courier New", monospace;
+  font-size: 18px;
+  line-height: 1.2;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.code-view .kw {
+  color: var(--lantern);
+}
+.code-view .cm {
+  color: #6a5a48;
+}
+.code-view .str {
+  color: var(--toxic);
+}
+.code-view .bad {
+  color: var(--danger);
+  background: rgba(255, 74, 58, 0.12);
+}
+
+.code-meta {
+  border-top: 2px solid var(--timber);
+  padding: 6px 10px;
+  background: #120e0b;
+}
+
+.compile-line {
+  display: block;
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  color: var(--exit);
+  line-height: 1.5;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
 /* ===== TERMINAL ===== */
 .terminal-panel {
-  border-bottom: 3px solid var(--timber);
+  min-height: 0;
 }
 
 .terminal {
@@ -643,6 +701,19 @@ body {
   .mine-panel {
     border-right: none;
     border-bottom: 3px solid var(--timber);
+  }
+
+  .lower-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .code-panel {
+    border-right: none;
+    border-bottom: 3px solid var(--timber);
+  }
+
+  .code-view {
+    max-height: 140px;
   }
 
   .stack-slot {
