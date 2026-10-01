@@ -1,19 +1,18 @@
 # CANARY MINE
 
-A **beginner** lesson about stack canaries — no coding experience needed.
+Beginner story first, then **coding challenges** with a living stack animation.
 
-You look at a simple mine picture:
+1. **Steps 1–4** — plain-English mine picture (brown box / yellow bird / blue door)  
+2. **Steps 5–10** — coding challenges that get harder; stack fills as you learn  
 
-- **Brown box** = where typed text goes  
-- **Yellow bird** = the canary (alarm)  
-- **Blue door** = the exit (where the program goes next)
+Wrong answers stay on the same step. Progress is saved.
 
-Six short steps. Failures stay on the same step. Progress is saved.
+This teaches **understanding and safe habits** (bounded reads, keep the protector). It is **not** an exploit / bypass CTF.
 
 ```bash
 make game   # http://localhost:8080
 ```
 
 <p align="center">
-  <img src="docs/images/canary-mine.png" alt="CANARY MINE beginner screen" width="640" />
+  <img src="docs/images/canary-mine.png" alt="CANARY MINE" width="640" />
 </p>

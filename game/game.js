@@ -1,4 +1,4 @@
-/* Beginner-friendly loop: explain picture → one action → feedback */
+/* Beginner story + coding challenges with stack animation */
 
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -22,6 +22,9 @@
   const btnContinue = $("btn-continue");
   const progressNote = $("progress-note");
   const stackView = $("stack-view");
+  const stackPanel = $("stack-panel");
+  const legendEl = $("legend");
+  const codeSnip = $("code-snip");
 
   const state = {
     levelIndex: 0,
@@ -33,7 +36,7 @@
     derived: false,
     exitCorrupted: false,
     escaped: false,
-    canaryValue: "BIRD",
+    canaryValue: "B1RD00",
     bufferSize: 8,
     offByOne: false,
     nulHazard: false,
@@ -43,10 +46,11 @@
     highlightBird: false,
   };
 
+  let demoTimer = null;
+
   function levels() {
     return window.LEVELS;
   }
-
   function L() {
     return levels()[state.levelIndex];
   }
@@ -56,7 +60,6 @@
     if (Number.isNaN(n)) return 0;
     return Math.max(0, Math.min(n, levels().length));
   }
-
   function saveProgress(i) {
     localStorage.setItem(SAVE, String(i));
   }
@@ -79,8 +82,46 @@
   }
 
   function paint() {
-    // keep stack stub updated for renderer helpers, but user never sees it
     if (window.Render && stackView) Render.renderStack(stackView, state);
+  }
+
+  function stopDemo() {
+    if (demoTimer) {
+      clearInterval(demoTimer);
+      demoTimer = null;
+    }
+  }
+
+  function runDemo(str) {
+    stopDemo();
+    const bytes = [...str].map((ch) => ch.charCodeAt(0) & 0xff);
+    const buf = state.bufferSize;
+    state.inputBytes = [];
+    state.fillRatio = 0;
+    state.birdAlive = true;
+    state.exitCorrupted = false;
+    state.escaped = false;
+    state.guardOn = L().guardOn !== false;
+    if (L().scene === "noguard") state.guardOn = false;
+
+    let step = 0;
+    const target = Math.max(bytes.length / buf, 0.05);
+    state.animating = true;
+    demoTimer = setInterval(() => {
+      step++;
+      state.fillRatio = target * (step / 12);
+      state.inputBytes = bytes.slice(0, Math.ceil((bytes.length * step) / 12));
+      const overflow = Math.max(0, state.inputBytes.length - buf);
+      if (overflow > 0 && state.guardOn) state.birdAlive = false;
+      if (overflow > 8 && !state.guardOn) state.exitCorrupted = true;
+      if (overflow <= 0 && step >= 12) state.escaped = true;
+      paint();
+      if (step >= 12) {
+        stopDemo();
+        state.animating = false;
+        paint();
+      }
+    }, 55);
   }
 
   function win(msg) {
@@ -93,6 +134,7 @@
   }
 
   function retry() {
+    stopDemo();
     const cur = L();
     state.inputBytes = [];
     state.fillRatio = 0;
@@ -103,7 +145,7 @@
     state.animating = false;
     state.locked = false;
     state.levelComplete = false;
-    state.highlightBird = cur.kind === "find";
+    state.highlightBird = !!(cur.highlightBird || cur.kind === "find");
     state.bufferSize = cur.bufferSize || 8;
     if (cur.scene === "noguard") state.guardOn = false;
     if (cur.scene === "safe") {
@@ -123,6 +165,24 @@
     choicesEl.hidden = true;
     formEl.hidden = true;
 
+    // viz mode
+    const coding = !!cur.showStack;
+    stackPanel.hidden = !coding;
+    legendEl.hidden = coding; // keep picture legend for story; stack label for coding
+    if (cur.codeSnippet) {
+      codeSnip.hidden = false;
+      codeSnip.textContent = cur.codeSnippet;
+    } else {
+      codeSnip.hidden = true;
+      codeSnip.textContent = "";
+    }
+
+    paint();
+
+    if (cur.autoDemo && cur.demoInput) {
+      runDemo(cur.demoInput);
+    }
+
     if (cur.kind === "choice") {
       choicesEl.hidden = false;
       cur.choices.forEach((c) => {
@@ -136,7 +196,7 @@
             b.classList.add("good");
             win(cur.success);
           } else {
-            feedback("Not that one. Still on this step — try another.", true);
+            feedback("Not that one — still this step. Try again.", true);
           }
         };
         choicesEl.appendChild(b);
@@ -145,7 +205,6 @@
       formEl.hidden = false;
       inputEl.focus();
     }
-    paint();
   }
 
   function start(i) {
@@ -160,6 +219,10 @@
     retry();
   }
 
+  function normalize(s) {
+    return s.toLowerCase().replace(/\s+/g, "");
+  }
+
   function onAnswer(raw) {
     if (state.locked || state.levelComplete) return;
     const cur = L();
@@ -167,7 +230,7 @@
     if (!str) return;
 
     if (cur.kind === "find") {
-      if (str.toLowerCase().replace(/\s+/g, "") === "canary") {
+      if (normalize(str) === "canary") {
         state.highlightBird = true;
         win(cur.success);
       } else {
@@ -176,7 +239,22 @@
       return;
     }
 
-    // reset visuals for a new try
+    if (cur.kind === "fill") {
+      const ok =
+        normalize(str) === normalize(cur.answer) ||
+        (cur.altAnswers || []).some((a) => normalize(str) === normalize(a));
+      if (ok) {
+        state.escaped = true;
+        state.birdAlive = true;
+        paint();
+        win(cur.success);
+      } else {
+        feedback("Not quite — still this step. Hint: the buffer length.", true);
+      }
+      return;
+    }
+
+    // interactive buffer challenges (story)
     state.birdAlive = true;
     state.exitCorrupted = false;
     state.escaped = false;
@@ -197,6 +275,7 @@
     const timer = setInterval(() => {
       step++;
       state.fillRatio = target * (step / 10);
+      paint();
       if (step >= 10) {
         clearInterval(timer);
         state.animating = false;
@@ -217,7 +296,7 @@
         inputEl.disabled = false;
         inputEl.value = "";
         inputEl.focus();
-        feedback("That was too long — still Step 2. Try a shorter name.", true);
+        feedback("Too long — still this step. Try a shorter name.", true);
       }
     } else if (cur.kind === "smash") {
       if (overflow > 0) {
@@ -228,7 +307,7 @@
         inputEl.disabled = false;
         inputEl.value = "";
         inputEl.focus();
-        feedback("Need a longer string so the “gas” reaches the bird.", true);
+        feedback("Need a longer string so gas reaches the bird.", true);
       }
     } else if (cur.kind === "hijack") {
       if (overflow > 8) {
@@ -240,7 +319,7 @@
         inputEl.disabled = false;
         inputEl.value = "";
         inputEl.focus();
-        feedback("Still Step 4. Type a longer string (20+ letters).", true);
+        feedback("Still this step. Type 20+ letters.", true);
       }
     }
     paint();
@@ -251,7 +330,7 @@
     if (p > 0 && p < levels().length) {
       btnContinue.hidden = false;
       btnContinue.textContent = `Keep going (step ${p + 1})`;
-      progressNote.textContent = `Saved progress: step ${p + 1} of ${levels().length}`;
+      progressNote.textContent = `Saved: step ${p + 1} of ${levels().length}`;
       $("btn-start").textContent = "Start over";
       $("btn-start").classList.remove("primary");
     } else {

@@ -11,12 +11,11 @@
 </head>
 <body>
   <div id="crt" class="crt">
-    <!-- TITLE -->
     <section id="title-screen" class="screen active">
       <div class="center">
         <h1 class="brand">CANARY<br />MINE</h1>
-        <p class="tagline">A tiny story about a bird that protects computer programs.</p>
-        <p class="sub">No coding experience needed.</p>
+        <p class="tagline">First the story. Then coding challenges with a living stack.</p>
+        <p class="sub">Beginner-friendly. No exploit tricks — just understanding.</p>
         <canvas id="title-bird" width="96" height="96" aria-hidden="true"></canvas>
         <div class="row">
           <button id="btn-continue" class="btn primary" type="button" hidden>Keep going</button>
@@ -26,20 +25,27 @@
       </div>
     </section>
 
-    <!-- GAME -->
     <section id="game-screen" class="screen">
-      <p id="step" class="step">Step 1 of 6</p>
+      <p id="step" class="step">Step 1 of 10</p>
       <h2 id="title" class="title">...</h2>
-
       <p id="explain" class="explain">...</p>
 
-      <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Picture of a mine with a bird"></canvas>
+      <div class="viz">
+        <div class="viz-mine">
+          <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Mine picture"></canvas>
+          <ul id="legend" class="legend">
+            <li><span class="dot buffer"></span> <strong>Brown box</strong> — where your typed text goes</li>
+            <li><span class="dot bird"></span> <strong>Yellow bird</strong> — the canary (the alarm)</li>
+            <li><span class="dot door"></span> <strong>Blue door</strong> — the exit (where the program goes next)</li>
+          </ul>
+        </div>
+        <div id="stack-panel" class="stack-panel" hidden>
+          <p class="stack-label">Memory stack (same story, as boxes)</p>
+          <div id="stack-view" class="stack-view"></div>
+        </div>
+      </div>
 
-      <ul id="legend" class="legend">
-        <li><span class="dot buffer"></span> <strong>Brown box</strong> — where your typed text goes</li>
-        <li><span class="dot bird"></span> <strong>Yellow bird</strong> — the canary (the alarm)</li>
-        <li><span class="dot door"></span> <strong>Blue door</strong> — the exit (where the program goes next)</li>
-      </ul>
+      <pre id="code-snip" class="code-snip" hidden></pre>
 
       <p class="do-label">What you do now</p>
       <p id="todo" class="todo">...</p>
@@ -51,9 +57,7 @@
         <button class="btn primary" type="submit">OK</button>
       </form>
 
-      <!-- hidden bits the old renderer still fills -->
       <div id="terminal" hidden><div id="term-output"></div></div>
-      <div id="stack-view" class="sr-only"></div>
       <pre id="code-view" class="sr-only"></pre>
       <span id="binary-name" class="sr-only"></span>
       <span id="goal" class="sr-only"></span>
@@ -77,11 +81,10 @@
       </div>
     </section>
 
-    <!-- WIN -->
     <section id="win-screen" class="screen">
       <div class="center">
         <h1 class="brand small">You got it</h1>
-        <p class="tagline">The bird sits between your text and the exit.<br />If your text spills too far, the bird dies and the program stops — so the exit stays safe.</p>
+        <p class="tagline">Limit the text. Keep the bird. Watch the stack fill.<br />The canary dies so the exit doesn’t have to.</p>
         <button id="btn-replay" class="btn primary" type="button">Play again</button>
       </div>
     </section>
