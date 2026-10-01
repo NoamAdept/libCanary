@@ -226,14 +226,12 @@ window.Render = {
     ctx.fillRect(62 * scale, 40 * scale, 14 * scale, 3 * scale);
 
     if (!state.guardOn) {
-      // empty perch + "NO CANARY" placard when protector disabled
-      ctx.fillStyle = PX.muted || "#9a8770";
       ctx.fillStyle = "#9a8770";
       ctx.font = "bold 11px monospace";
       ctx.fillText("NO CANARY", 52 * scale, 34 * scale);
-      ctx.fillStyle = PX.danger;
-      ctx.font = "bold 12px monospace";
       if (state.exitCorrupted) {
+        ctx.fillStyle = PX.danger;
+        ctx.font = "bold 12px monospace";
         ctx.fillText("EXIT LOST", 52 * scale, 14 * scale);
       }
     } else {
@@ -242,7 +240,16 @@ window.Render = {
         ? { Y: PX.canary, E: PX.eye, B: PX.beak, D: PX.canaryDark }
         : { X: "#6a6a6a", x: "#3a3a3a", "+": PX.danger };
 
-      // bobbing
+      // find-challenge: pulse a ring around the bird
+      if (state.highlightBird && state.birdAlive) {
+        ctx.strokeStyle = PX.canary;
+        ctx.lineWidth = 3;
+        const pulse = 18 + (state.tick % 20);
+        ctx.beginPath();
+        ctx.arc(68 * scale, 34 * scale, pulse, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       const bob = state.birdAlive ? (state.tick % 30 < 15 ? 0 : -1) : 1;
       blitSprite(ctx, birdSprite, 62, 28 + bob, scale, birdPalette);
 

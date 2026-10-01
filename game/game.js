@@ -1,4 +1,4 @@
-/* CANARY MINE — main game loop (12 C-lesson levels) */
+/* CANARY MINE — simple challenge loop */
 
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -8,18 +8,19 @@
   const winScreen = $("win-screen");
   const mineCanvas = $("mine-canvas");
   const stackView = $("stack-view");
+  const termWrap = $("terminal");
   const termOutput = $("term-output");
   const termInput = $("term-input");
   const termForm = $("term-form");
+  const choicesEl = $("choices");
   const dialogueEl = $("dialogue");
-  const objectiveEl = $("objective");
+  const goalEl = $("goal");
   const levelLabel = $("level-label");
   const canaryStatus = $("canary-status");
   const guardStatus = $("guard-status");
   const codeView = $("code-view");
-  const codeFile = $("code-file");
-  const compileLine = $("compile-line");
   const binaryName = $("binary-name");
+  const peek = $("peek");
   const btnNext = $("btn-next");
   const btnHint = $("btn-hint");
   const btnReset = $("btn-reset");
@@ -34,102 +35,47 @@
     derived: false,
     exitCorrupted: false,
     escaped: false,
-    canaryValue: "A7F3C91D",
+    canaryValue: "C4A1B170",
     bufferSize: 8,
     offByOne: false,
     nulHazard: false,
     animating: false,
     locked: false,
     levelComplete: false,
+    highlightBird: false,
   };
 
-  function showScreen(which) {
-    [titleScreen, gameScreen, winScreen].forEach((s) => s.classList.remove("active"));
-    which.classList.add("active");
-  }
-
-  function randomCanary(derived) {
-    const base = Math.floor(Math.random() * 0xffffffff)
-      .toString(16)
-      .toUpperCase()
-      .padStart(8, "0");
-    if (!derived) return base;
-    const mixed = (parseInt(base, 16) ^ 0xdeadbeef) >>> 0;
-    return mixed.toString(16).toUpperCase().padStart(8, "0");
-  }
-
-  function currentLevel() {
+  function lvl() {
     return window.LEVELS[state.levelIndex];
   }
 
-  function setDialogue(text) {
-    dialogueEl.textContent = text;
+  function show(screen) {
+    [titleScreen, gameScreen, winScreen].forEach((s) => s.classList.remove("active"));
+    screen.classList.add("active");
   }
 
-  function appendTerm(lines) {
-    lines.forEach(({ cls, text }) => {
-      const line = document.createElement("div");
-      if (cls) line.className = cls;
-      line.textContent = text;
-      termOutput.appendChild(line);
-    });
-    termOutput.scrollTop = termOutput.scrollHeight;
+  function say(text) {
+    dialogueEl.textContent = text;
   }
 
   function clearTerm() {
     termOutput.innerHTML = "";
   }
 
-  function escapeHtml(s) {
-    return s
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+  function term(lines) {
+    lines.forEach(({ cls, text }) => {
+      const div = document.createElement("div");
+      if (cls) div.className = cls;
+      div.textContent = text;
+      termOutput.appendChild(div);
+    });
+    termOutput.scrollTop = termOutput.scrollHeight;
   }
 
-  function highlightC(src) {
-    const lines = src.split("\n");
-    return lines
-      .map((line) => {
-        let escaped = escapeHtml(line);
-        const isComment = /^\s*\/\*/.test(line) || /^\s*\*/.test(line) || /^\s\/\//.test(line);
-        if (isComment || line.includes("Lesson:") || line.includes("Binary:")) {
-          return `<span class="cm">${escaped}</span>`;
-        }
-        if (/UNSAFE|NEVER|BUG:|gets\s*\(|strcpy\s*\(/.test(line)) {
-          return `<span class="bad">${escaped}</span>`;
-        }
-        escaped = escaped.replace(
-          /\b(char|int|void|size_t|uint64_t|return|if|else|for|include|define|sizeof|const|struct)\b/g,
-          '<span class="kw">$1</span>'
-        );
-        escaped = escaped.replace(/(&quot;|")((?:\\.|[^\\])*?)(&quot;|")/g, '<span class="str">$1$2$3</span>');
-        return escaped;
-      })
-      .join("\n");
-  }
-
-  function renderCode(lvl) {
-    const sources = window.LESSON_SOURCES || {};
-    let text = sources[lvl.source] || `/* missing ${lvl.source} — run: make bundle */\n`;
-    if (lvl.extraSources) {
-      lvl.extraSources.forEach((extra) => {
-        if (sources[extra]) {
-          text += `\n/* ─── ${extra} ─── */\n` + sources[extra];
-        }
-      });
-    }
-    codeFile.textContent = lvl.source;
-    compileLine.textContent = lvl.compile || "";
-    binaryName.textContent = "./" + (lvl.binary || "vulnerable");
-    codeView.innerHTML = highlightC(text);
-    codeView.scrollTop = 0;
-  }
-
-  function updateHud() {
-    const lvl = currentLevel();
-    levelLabel.textContent = `LV.${lvl.id} ${lvl.name}`;
-    if (objectiveEl) objectiveEl.textContent = lvl.objective;
+  function hud() {
+    const L = lvl();
+    levelLabel.textContent = `CH.${L.id} ${L.name}`;
+    goalEl.textContent = L.goal;
     if (!state.guardOn) {
       canaryStatus.textContent = "NO BIRD";
       canaryStatus.className = "status off";
@@ -139,258 +85,239 @@
     }
     guardStatus.textContent = state.guardOn ? "GUARD ON" : "GUARD OFF";
     guardStatus.className = `status ${state.guardOn ? "on" : "off"}`;
-    const mineMode = $("mine-mode");
-    const stackMode = $("stack-mode");
-    if (mineMode) mineMode.textContent = lvl.highlightStack ? "MAPPED" : "METAPHOR";
-    if (stackMode) stackMode.textContent = state.derived ? "DERIVED" : "MEMORY";
   }
 
-  function resetLevelState() {
-    const lvl = currentLevel();
+  function showCode(L) {
+    const src = (window.LESSON_SOURCES || {})[L.source] || `/* ${L.source} */`;
+    codeView.textContent = src;
+    binaryName.textContent = L.binary || "";
+  }
+
+  function win(msg) {
+    state.levelComplete = true;
+    state.locked = true;
+    say(msg);
+    btnNext.hidden = false;
+    termInput.disabled = true;
+  }
+
+  function reset() {
+    const L = lvl();
     state.inputBytes = [];
     state.fillRatio = 0;
     state.birdAlive = true;
-    state.guardOn = lvl.guardOn;
-    state.derived = !!lvl.derived;
-    state.bufferSize = lvl.bufferSize || 8;
+    state.guardOn = !!L.guardOn;
+    state.derived = false;
+    state.bufferSize = L.bufferSize || 8;
     state.exitCorrupted = false;
     state.escaped = false;
     state.offByOne = false;
     state.nulHazard = false;
-    state.canaryValue = randomCanary(state.derived);
     state.animating = false;
     state.locked = false;
     state.levelComplete = false;
+    state.highlightBird = L.kind === "find";
+    state.canaryValue = "C4A1B170";
     btnNext.hidden = true;
     termInput.disabled = false;
     termInput.value = "";
-    updateHud();
-    renderCode(lvl);
-    Render.renderStack(stackView, state);
     clearTerm();
-    appendTerm(lvl.termIntro);
-    // one prompt on screen: what to do now (longer lore stays on HINT)
-    setDialogue(lvl.objective);
-    if (objectiveEl) objectiveEl.textContent = lvl.objective;
+    choicesEl.innerHTML = "";
+    choicesEl.hidden = true;
+    termWrap.hidden = true;
+    peek.open = L.kind === "find" || L.kind === "choice";
+
+    // scene presets for the mine
+    if (L.scene === "noguard") {
+      state.guardOn = false;
+      state.birdAlive = true;
+    }
+    if (L.scene === "safe") {
+      state.escaped = true;
+      state.birdAlive = true;
+      state.guardOn = true;
+    }
+
+    hud();
+    showCode(L);
+    say(L.prompt);
+    Render.renderStack(stackView, state);
+
+    if (L.kind === "choice") {
+      choicesEl.hidden = false;
+      L.choices.forEach((c) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pixel-btn choice";
+        b.textContent = c.label;
+        b.addEventListener("click", () => {
+          if (state.locked || state.levelComplete) return;
+          if (c.ok) {
+            b.classList.add("good");
+            win(L.success);
+          } else {
+            say("Not that one. " + (L.hint || "Try again."));
+          }
+        });
+        choicesEl.appendChild(b);
+      });
+    } else {
+      termWrap.hidden = false;
+      if (L.kind === "find") {
+        term([{ cls: "sys", text: "What sits between BUFFER and EXIT?" }]);
+      } else if (L.kind === "safe") {
+        term([
+          { cls: "cyan", text: `$ ./bin/L01_safe_copy` },
+          { cls: "sys", text: "name (short):" },
+        ]);
+      } else if (L.kind === "smash") {
+        term([
+          { cls: "cyan", text: `$ ./bin/L02_strcpy_overflow` },
+          { cls: "sys", text: "overflow payload:" },
+        ]);
+      } else if (L.kind === "hijack") {
+        term([
+          { cls: "err", text: "compiled -fno-stack-protector" },
+          { cls: "cyan", text: `$ ./bin/L07_guard_off` },
+          { cls: "sys", text: "deep overflow:" },
+        ]);
+      }
+    }
+
     termInput.focus();
   }
 
-  function startLevel(index) {
-    state.levelIndex = index;
-    if (index >= window.LEVELS.length) {
-      showScreen(winScreen);
+  function start(i) {
+    state.levelIndex = i;
+    if (i >= window.LEVELS.length) {
+      show(winScreen);
       return;
     }
-    showScreen(gameScreen);
-    resetLevelState();
+    show(gameScreen);
+    reset();
   }
 
-  function encodeInput(str) {
-    const bytes = [];
-    for (let i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i) & 0xff);
-    return bytes;
-  }
+  function onSubmit(raw) {
+    if (state.locked || state.levelComplete) return;
+    const L = lvl();
+    const str = raw.trim();
+    if (!str) return;
 
-  function evaluate(str) {
-    const lvl = currentLevel();
-    const bytes = encodeInput(str);
-    const len = bytes.length;
-    const bufSize = state.bufferSize;
-    const overflow = Math.max(0, len - bufSize);
+    if (L.kind === "find") {
+      term([{ text: str }]);
+      if (str.toLowerCase().replace(/\s+/g, "") === "canary") {
+        state.highlightBird = true;
+        win(L.success);
+      } else {
+        say("Nope. Hint: it's the yellow bird's job title.");
+      }
+      return;
+    }
 
+    // buffer challenges
+    const bytes = [...str].map((ch) => ch.charCodeAt(0) & 0xff);
+    const buf = state.bufferSize;
+    const overflow = Math.max(0, bytes.length - buf);
     state.inputBytes = bytes;
-    state.fillRatio = len / bufSize;
-    state.offByOne = false;
-    state.nulHazard = false;
     state.animating = true;
     state.locked = true;
     termInput.disabled = true;
+    term([{ text: str }]);
 
-    appendTerm([{ cls: "", text: str }]);
-
-    const steps = 12;
     let step = 0;
-    const targetFill = state.fillRatio;
+    const target = bytes.length / buf;
     state.fillRatio = 0;
-
     const timer = setInterval(() => {
       step++;
-      state.fillRatio = targetFill * (step / steps);
+      state.fillRatio = target * (step / 10);
       Render.renderStack(stackView, state);
-      if (step >= steps) {
+      if (step >= 10) {
         clearInterval(timer);
         state.animating = false;
-        resolveOutcome(lvl, overflow, len, str);
+        finishBuffer(L, overflow, bytes.length);
       }
-    }, 50);
+    }, 40);
   }
 
-  function smashPreview(hex) {
-    return hex.slice(0, 2) + "XXXX" + hex.slice(6);
-  }
-
-  function resolveOutcome(lvl, overflow, len, str) {
-    const mode = lvl.mode || "default";
-    const bufSize = state.bufferSize;
-    let outcome = "safe";
-
-    if (mode === "offbyone") {
-      if (len === bufSize) {
-        outcome = "offbyone";
-        state.offByOne = true;
-        state.birdAlive = false;
-        state.escaped = false;
-        state.fillRatio = 1.05;
-        appendTerm([
-          { cls: "err", text: `off-by-one: wrote buf[${bufSize}] one past the end` },
-          { cls: "err", text: "neighbor byte (canary edge) corrupted" },
-          { cls: "err", text: "*** stack smashing detected ***: terminated" },
-        ]);
-      } else if (len < bufSize) {
-        outcome = "safe";
+  function finishBuffer(L, overflow, len) {
+    if (L.kind === "safe") {
+      if (overflow <= 0) {
         state.birdAlive = true;
         state.escaped = true;
-        appendTerm([
-          { cls: "sys", text: `len=${len} < ${bufSize} — buggy bound not triggered` },
-          { cls: "ok", text: "no off-by-one this run" },
+        term([
+          { cls: "ok", text: `wrote ${len} bytes into buffer[${state.bufferSize}]` },
+          { cls: "ok", text: "canary intact — exit 0" },
         ]);
+        win(L.success);
       } else {
-        outcome = "smash";
         state.birdAlive = false;
-        appendTerm([
-          { cls: "err", text: `len=${len} > ${bufSize} — full overflow path` },
-          { cls: "err", text: "*** stack smashing detected ***" },
-        ]);
+        term([{ cls: "err", text: "too long — canary hit. Reset and stay ≤7 chars." }]);
+        say(L.hint);
+        state.locked = false;
+        termInput.disabled = false;
+        termInput.value = "";
+        termInput.focus();
       }
-    } else if (mode === "nul") {
-      if (len >= bufSize) {
-        outcome = "nul";
-        state.nulHazard = true;
-        state.birdAlive = true;
+    } else if (L.kind === "smash") {
+      if (overflow > 0 && L.guardOn) {
+        state.birdAlive = false;
         state.escaped = false;
-        state.fillRatio = 1;
-        appendTerm([
-          { cls: "err", text: `strncpy(buf, src, ${bufSize}) with len=${len}` },
-          { cls: "err", text: "NO terminating NUL written into buf" },
-          { cls: "err", text: "printf(\"%s\") walks past buffer → memory hazard" },
-          { cls: "hl", text: "fix: buf[sizeof(buf)-1] = '\\0';" },
+        term([
+          { cls: "err", text: `OVERFLOW +${overflow}` },
+          { cls: "err", text: "*** stack smashing detected ***: aborted" },
+          { cls: "sys", text: "EXIT never used — canary did its job" },
         ]);
+        win(L.success);
       } else {
-        outcome = "safe";
-        state.birdAlive = true;
-        state.escaped = true;
-        appendTerm([
-          { cls: "ok", text: `len=${len} < ${bufSize} — strncpy added padding NULs` },
-          { cls: "sys", text: "pitfall not triggered; use length ≥ 8" },
+        term([{ cls: "sys", text: "Need a longer string to reach the bird." }]);
+        say(L.hint);
+        state.locked = false;
+        termInput.disabled = false;
+        termInput.value = "";
+        termInput.focus();
+      }
+    } else if (L.kind === "hijack") {
+      if (overflow > 8) {
+        state.guardOn = false;
+        state.exitCorrupted = true;
+        state.escaped = false;
+        term([
+          { cls: "err", text: `OVERFLOW +${overflow} — no canary installed` },
+          { cls: "err", text: "return address overwritten" },
         ]);
-      }
-    } else if (overflow <= 0) {
-      outcome = "safe";
-      state.birdAlive = true;
-      state.escaped = true;
-      state.exitCorrupted = false;
-      appendTerm([
-        { cls: "ok", text: `wrote ${len} bytes into buffer[${bufSize}]` },
-        { cls: "ok", text: state.guardOn ? "canary intact ✓" : "no canary (guard off) — still within buf" },
-        { cls: "cyan", text: `./${lvl.binary} → exit 0` },
-      ]);
-      if (mode === "safe_api" || mode === "hardened") {
-        appendTerm([{ cls: "ok", text: "bounded API path — defender pattern" }]);
-      }
-      if (state.derived) {
-        appendTerm([{ cls: "hl", text: `canary_check() == 0  (slot ${state.canaryValue})` }]);
-      }
-    } else if (lvl.guardOn) {
-      outcome = "smash";
-      state.birdAlive = false;
-      state.escaped = false;
-      state.exitCorrupted = false;
-      appendTerm([
-        { cls: "err", text: `OVERFLOW +${overflow} bytes past buffer[${bufSize}]` },
-        { cls: "err", text: "toxic gas reached the canary..." },
-      ]);
-      if (lvl.showEpilogue) {
-        appendTerm([
-          { cls: "sys", text: "// function epilogue (compiler SSP)" },
-          { cls: "hl", text: `mov  rax, [canary_slot]   ; ${smashPreview(state.canaryValue)}` },
-          { cls: "hl", text: `xor  rax, fs:0x28         ; expected ${state.canaryValue}` },
-          { cls: "err", text: "jnz  __stack_chk_fail" },
-        ]);
-      }
-      appendTerm([
-        { cls: "err", text: "*** stack smashing detected ***: terminated" },
-        { cls: "sys", text: `./${lvl.binary} aborted — EXIT never used` },
-      ]);
-    } else {
-      outcome = overflow > 8 ? "hijack" : "partial";
-      state.birdAlive = true;
-      state.escaped = false;
-      state.exitCorrupted = overflow > 8;
-      appendTerm([
-        { cls: "err", text: `OVERFLOW +${overflow} bytes — compiled -fno-stack-protector` },
-        {
-          cls: "err",
-          text: state.exitCorrupted
-            ? "return address overwritten → control-flow HIJACK"
-            : "saved frame clobbered; push deeper to hit RET",
-        },
-      ]);
-      if (state.exitCorrupted) {
-        appendTerm([
-          { cls: "err", text: "jumping to 0xDEAD!!!! — segfault / exploit" },
-          { cls: "sys", text: `./${lvl.binary} — without a canary, silence is death` },
-        ]);
-        outcome = "hijack";
+        win(L.success);
+      } else {
+        term([{ cls: "sys", text: "Deeper — push past saved frame to hit RET (20+ chars)." }]);
+        say(L.hint);
+        state.locked = false;
+        termInput.disabled = false;
+        termInput.value = "";
+        termInput.focus();
       }
     }
-
+    hud();
     Render.renderStack(stackView, state);
-    updateHud();
-
-    const success = outcome === lvl.unlockNextOn;
-    if (success) {
-      state.levelComplete = true;
-      setDialogue(lvl.successDialogue);
-      btnNext.hidden = false;
-      appendTerm([{ cls: "hl", text: `▶ LEVEL ${lvl.id}/12 CLEAR — NEXT LEVEL` }]);
-    } else {
-      setDialogue(lvl.failDialogue);
-      appendTerm([{ cls: "sys", text: "▶ try again (RESET or new input)" }]);
-      state.locked = false;
-      termInput.disabled = false;
-      termInput.value = "";
-      termInput.focus();
-    }
   }
 
   function loop() {
     state.tick++;
-    Render.drawMine(mineCanvas, state);
+    // pass highlight flag for find challenge
+    const drawState = { ...state, highlightBird: state.highlightBird && state.birdAlive };
+    Render.drawMine(mineCanvas, drawState);
     requestAnimationFrame(loop);
   }
 
-  $("btn-start").addEventListener("click", () => startLevel(0));
-  $("btn-replay").addEventListener("click", () => startLevel(0));
-  btnNext.addEventListener("click", () => startLevel(state.levelIndex + 1));
-  btnHint.addEventListener("click", () => setDialogue(currentLevel().hint));
-  btnReset.addEventListener("click", () => resetLevelState());
-
-  termForm.addEventListener("submit", (e) => {
+  $("btn-start").onclick = () => start(0);
+  $("btn-replay").onclick = () => start(0);
+  btnNext.onclick = () => start(state.levelIndex + 1);
+  btnHint.onclick = () => say(lvl().hint || "");
+  btnReset.onclick = () => reset();
+  termForm.onsubmit = (e) => {
     e.preventDefault();
-    if (state.locked || state.levelComplete) return;
-    const val = termInput.value;
-    if (!val) return;
-    evaluate(val);
-  });
+    onSubmit(termInput.value);
+  };
 
   Render.drawTitleBird($("title-bird"));
-  Render.drawForeman($("foreman"));
-  showScreen(titleScreen);
+  show(titleScreen);
   loop();
-
-  setInterval(() => {
-    if (titleScreen.classList.contains("active")) {
-      Render.drawTitleBird($("title-bird"));
-    }
-  }, 400);
 })();
