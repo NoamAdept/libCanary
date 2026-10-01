@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>An 8-bit expedition into stack canaries and safe C</strong><br />
-  Twelve interactive lessons · real lesson binaries · mine metaphor → memory → code → terminal
+  Twelve short levels · one mine view · optional stack/C peek
 </p>
 
 <p align="center">
@@ -24,10 +24,9 @@ The same material ships as real, compilable binaries under `bin/` so you can rei
 ## Features
 
 - **12 progressive levels** from safe copy through hardening flags
-- **Four synced views:** coal mine · stack frame · C lesson · terminal
-- **Real C sources** in `lessons/` with matching `make` targets
-- **libcanary** teaching library for a manual derived-canary lesson
-- Zero-build web game (`make game`) plus optional native binaries (`make lessons`)
+- One screen: mine + prompt + input (stack/C under “peek”)
+- Real C sources in `lessons/` with matching `make` targets
+- `libcanary` teaching library for a manual derived-canary lesson
 
 ## Quick start
 
@@ -69,14 +68,7 @@ Lesson sources live in [`lessons/`](lessons/). The game embeds them in the **C L
 
 ## How the game teaches
 
-| Panel | Role |
-|-------|------|
-| **Coal mine** | Metaphor: buffer work zone, yellow canary, EXIT / return address |
-| **Stack frame** | Same layout as memory slots, with overflow growing upward |
-| **C lesson** | Exact source for the level plus its compile line |
-| **Terminal** | Type input as if invoking `./bin/LXX_...` |
-
-Safe input keeps the bird alive. Overflow turns into “toxic gas,” trips the canary, and aborts before the exit is hijacked — unless you intentionally disable the guard.
+Type into the terminal. The mine shows buffer → canary → EXIT. Overflow = toxic gas. Open **Peek under the hood** only if you want the stack diagram and C source.
 
 ## Repository layout
 
