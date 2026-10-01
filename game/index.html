@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CANARY MINE</title>
+  <title>CANARY MINE — Learn the bird</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
@@ -11,72 +11,78 @@
 </head>
 <body>
   <div id="crt" class="crt">
+    <!-- TITLE -->
     <section id="title-screen" class="screen active">
-      <div class="title-content">
+      <div class="center">
         <h1 class="brand">CANARY<br />MINE</h1>
-        <p class="tagline">6 challenges · stack canaries · defensive only</p>
+        <p class="tagline">A tiny story about a bird that protects computer programs.</p>
+        <p class="sub">No coding experience needed.</p>
         <canvas id="title-bird" width="96" height="96" aria-hidden="true"></canvas>
-        <div class="title-actions">
-          <button id="btn-continue" class="pixel-btn primary" type="button" hidden>CONTINUE</button>
-          <button id="btn-start" class="pixel-btn" type="button">START OVER</button>
+        <div class="row">
+          <button id="btn-continue" class="btn primary" type="button" hidden>Keep going</button>
+          <button id="btn-start" class="btn primary" type="button">Start from beginning</button>
         </div>
-        <p id="progress-note" class="progress-note"></p>
+        <p id="progress-note" class="note"></p>
       </div>
     </section>
 
+    <!-- GAME -->
     <section id="game-screen" class="screen">
-      <header class="bar">
-        <span class="brand-mini">CANARY MINE</span>
-        <span id="level-label" class="level-chip">CH.1</span>
-        <span id="canary-status" class="status alive">ALIVE</span>
-        <span id="guard-status" class="status on">GUARD ON</span>
-      </header>
+      <p id="step" class="step">Step 1 of 6</p>
+      <h2 id="title" class="title">...</h2>
 
-      <p class="goal"><span class="goal-label">GOAL</span> <span id="goal">...</span></p>
-      <p id="dialogue" class="dialogue">...</p>
+      <p id="explain" class="explain">...</p>
 
-      <div class="split">
-        <div class="pane left-pane">
-          <div class="pane-title">MINE / STACK</div>
-          <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Coal mine with canary"></canvas>
-          <div id="stack-view" class="stack-view"></div>
-        </div>
-        <div class="pane right-pane">
-          <div class="pane-title">C CODE · <span id="binary-name"></span></div>
-          <pre id="code-view" class="code-view"></pre>
-          <p id="fact" class="fact"></p>
-        </div>
-      </div>
+      <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Picture of a mine with a bird"></canvas>
 
-      <div class="dock">
-        <div id="choices" class="choices" hidden></div>
-        <div id="terminal" class="terminal" hidden>
-          <div id="term-output" class="term-output"></div>
-          <form id="term-form" class="term-form" autocomplete="off">
-            <span class="prompt">&gt;</span>
-            <input id="term-input" type="text" maxlength="64" spellcheck="false" placeholder="answer then ENTER" />
-          </form>
-        </div>
-        <div class="actions">
-          <button id="btn-hint" class="pixel-btn" type="button">HINT</button>
-          <button id="btn-reset" class="pixel-btn" type="button">RETRY</button>
-          <button id="btn-next" class="pixel-btn primary" type="button" hidden>NEXT ▶</button>
-        </div>
-      </div>
+      <ul id="legend" class="legend">
+        <li><span class="dot buffer"></span> <strong>Brown box</strong> — where your typed text goes</li>
+        <li><span class="dot bird"></span> <strong>Yellow bird</strong> — the canary (the alarm)</li>
+        <li><span class="dot door"></span> <strong>Blue door</strong> — the exit (where the program goes next)</li>
+      </ul>
 
-      <!-- stubs for leftover ids -->
+      <p class="do-label">What you do now</p>
+      <p id="todo" class="todo">...</p>
+
+      <div id="choices" class="choices" hidden></div>
+
+      <form id="term-form" class="answer" autocomplete="off" hidden>
+        <input id="term-input" type="text" maxlength="48" spellcheck="false" placeholder="Type here…" />
+        <button class="btn primary" type="submit">OK</button>
+      </form>
+
+      <!-- hidden bits the old renderer still fills -->
+      <div id="terminal" hidden><div id="term-output"></div></div>
+      <div id="stack-view" class="sr-only"></div>
+      <pre id="code-view" class="sr-only"></pre>
+      <span id="binary-name" class="sr-only"></span>
+      <span id="goal" class="sr-only"></span>
+      <span id="dialogue" class="sr-only"></span>
+      <span id="level-label" class="sr-only"></span>
+      <span id="canary-status" class="sr-only"></span>
+      <span id="guard-status" class="sr-only"></span>
+      <span id="fact" class="sr-only"></span>
       <span id="compile-line" class="sr-only"></span>
       <span id="code-file" class="sr-only"></span>
       <span id="objective" class="sr-only"></span>
       <span id="mine-mode" class="sr-only"></span>
       <span id="stack-mode" class="sr-only"></span>
+
+      <p id="feedback" class="feedback" hidden></p>
+
+      <div class="row">
+        <button id="btn-hint" class="btn" type="button">Hint</button>
+        <button id="btn-reset" class="btn" type="button">Try again</button>
+        <button id="btn-next" class="btn primary" type="button" hidden>Next →</button>
+      </div>
     </section>
 
+    <!-- WIN -->
     <section id="win-screen" class="screen">
-      <div class="title-content">
-        <h1 class="brand small">CLEAR</h1>
-        <p class="tagline">Epilogue checks the bird before using EXIT. Mismatch → abort.</p>
-        <button id="btn-replay" class="pixel-btn primary" type="button">AGAIN</button>
+      <div class="center">
+        <h1 class="brand small">You got it</h1>
+        <p class="tagline">The bird sits between your text and the exit.<br />If your text spills too far, the bird dies and the program stops — so the exit stays safe.</p>
+        <button id="btn-replay" class="btn primary" type="button">Play again</button>
       </div>
     </section>
   </div>
