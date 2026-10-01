@@ -1,7 +1,8 @@
-/* CANARY MINE — simple challenge loop */
+/* CANARY MINE — full-screen split + progress that survives fails */
 
 (() => {
   const $ = (id) => document.getElementById(id);
+  const SAVE_KEY = "canary-mine-progress";
 
   const titleScreen = $("title-screen");
   const gameScreen = $("game-screen");
@@ -15,15 +16,17 @@
   const choicesEl = $("choices");
   const dialogueEl = $("dialogue");
   const goalEl = $("goal");
+  const factEl = $("fact");
   const levelLabel = $("level-label");
   const canaryStatus = $("canary-status");
   const guardStatus = $("guard-status");
   const codeView = $("code-view");
   const binaryName = $("binary-name");
-  const peek = $("peek");
   const btnNext = $("btn-next");
   const btnHint = $("btn-hint");
   const btnReset = $("btn-reset");
+  const btnContinue = $("btn-continue");
+  const progressNote = $("progress-note");
 
   const state = {
     levelIndex: 0,
@@ -35,7 +38,7 @@
     derived: false,
     exitCorrupted: false,
     escaped: false,
-    canaryValue: "C4A1B170",
+    canaryValue: "C4A10000", // ponytail: fake glibc-style NUL-low nibble for teaching display
     bufferSize: 8,
     offByOne: false,
     nulHazard: false,
@@ -47,6 +50,16 @@
 
   function lvl() {
     return window.LEVELS[state.levelIndex];
+  }
+
+  function loadProgress() {
+    const n = parseInt(localStorage.getItem(SAVE_KEY) || "0", 10);
+    if (Number.isNaN(n)) return 0;
+    return Math.max(0, Math.min(n, window.LEVELS.length));
+  }
+
+  function saveProgress(i) {
+    localStorage.setItem(SAVE_KEY, String(i));
   }
 
   function show(screen) {
@@ -74,8 +87,9 @@
 
   function hud() {
     const L = lvl();
-    levelLabel.textContent = `CH.${L.id} ${L.name}`;
+    levelLabel.textContent = `CH.${L.id}/${window.LEVELS.length} ${L.name}`;
     goalEl.textContent = L.goal;
+    factEl.textContent = L.fact || "";
     if (!state.guardOn) {
       canaryStatus.textContent = "NO BIRD";
       canaryStatus.className = "status off";
@@ -88,9 +102,8 @@
   }
 
   function showCode(L) {
-    const src = (window.LESSON_SOURCES || {})[L.source] || `/* ${L.source} */`;
-    codeView.textContent = src;
-    binaryName.textContent = L.binary || "";
+    codeView.textContent = (window.LESSON_SOURCES || {})[L.source] || `/* ${L.source} */`;
+    binaryName.textContent = L.binary || L.source || "";
   }
 
   function win(msg) {
@@ -99,9 +112,12 @@
     say(msg);
     btnNext.hidden = false;
     termInput.disabled = true;
+    // save the *next* challenge so CONTINUE resumes forward
+    saveProgress(state.levelIndex + 1);
   }
 
-  function reset() {
+  /** Retry current challenge only — never jumps back to CH.1 */
+  function retryCurrent() {
     const L = lvl();
     state.inputBytes = [];
     state.fillRatio = 0;
@@ -117,7 +133,7 @@
     state.locked = false;
     state.levelComplete = false;
     state.highlightBird = L.kind === "find";
-    state.canaryValue = "C4A1B170";
+    state.canaryValue = "C4A10000";
     btnNext.hidden = true;
     termInput.disabled = false;
     termInput.value = "";
@@ -125,16 +141,10 @@
     choicesEl.innerHTML = "";
     choicesEl.hidden = true;
     termWrap.hidden = true;
-    peek.open = L.kind === "find" || L.kind === "choice";
 
-    // scene presets for the mine
-    if (L.scene === "noguard") {
-      state.guardOn = false;
-      state.birdAlive = true;
-    }
+    if (L.scene === "noguard") state.guardOn = false;
     if (L.scene === "safe") {
       state.escaped = true;
-      state.birdAlive = true;
       state.guardOn = true;
     }
 
@@ -156,45 +166,57 @@
             b.classList.add("good");
             win(L.success);
           } else {
-            say("Not that one. " + (L.hint || "Try again."));
+            // wrong choice: stay on this challenge
+            say("Not that one — still on this challenge. " + (L.hint || "Try again."));
           }
         });
         choicesEl.appendChild(b);
       });
     } else {
       termWrap.hidden = false;
-      if (L.kind === "find") {
-        term([{ cls: "sys", text: "What sits between BUFFER and EXIT?" }]);
-      } else if (L.kind === "safe") {
+      if (L.kind === "find") term([{ cls: "sys", text: "What sits between BUFFER and EXIT / RET?" }]);
+      else if (L.kind === "safe")
         term([
-          { cls: "cyan", text: `$ ./bin/L01_safe_copy` },
+          { cls: "cyan", text: "$ ./bin/L01_safe_copy" },
           { cls: "sys", text: "name (short):" },
         ]);
-      } else if (L.kind === "smash") {
+      else if (L.kind === "smash")
         term([
-          { cls: "cyan", text: `$ ./bin/L02_strcpy_overflow` },
-          { cls: "sys", text: "overflow payload:" },
+          { cls: "cyan", text: "$ ./bin/L02_strcpy_overflow" },
+          { cls: "hl", text: "watch epilogue → __stack_chk_fail" },
+          { cls: "sys", text: "overflow:" },
         ]);
-      } else if (L.kind === "hijack") {
+      else if (L.kind === "hijack")
         term([
-          { cls: "err", text: "compiled -fno-stack-protector" },
-          { cls: "cyan", text: `$ ./bin/L07_guard_off` },
+          { cls: "err", text: "cc -fno-stack-protector" },
+          { cls: "cyan", text: "$ ./bin/L07_guard_off" },
           { cls: "sys", text: "deep overflow:" },
         ]);
-      }
     }
-
     termInput.focus();
   }
 
   function start(i) {
     state.levelIndex = i;
     if (i >= window.LEVELS.length) {
+      saveProgress(window.LEVELS.length);
       show(winScreen);
       return;
     }
+    saveProgress(i); // remember where you are even before clearing
     show(gameScreen);
-    reset();
+    retryCurrent();
+  }
+
+  function softFail(msg) {
+    // keep levelIndex; re-enable input; restore bird for next try
+    say(msg);
+    state.locked = false;
+    state.animating = false;
+    termInput.disabled = false;
+    termInput.value = "";
+    termInput.focus();
+    // visual: leave smash state visible until they type again / hit RETRY
   }
 
   function onSubmit(raw) {
@@ -209,12 +231,18 @@
         state.highlightBird = true;
         win(L.success);
       } else {
-        say("Nope. Hint: it's the yellow bird's job title.");
+        softFail("Still CH.1 — type the bird's name. Hint: canary");
       }
       return;
     }
 
-    // buffer challenges
+    // fresh attempt visuals
+    state.birdAlive = true;
+    state.exitCorrupted = false;
+    state.escaped = false;
+    state.guardOn = !!L.guardOn;
+    if (L.scene === "noguard") state.guardOn = false;
+
     const bytes = [...str].map((ch) => ch.charCodeAt(0) & 0xff);
     const buf = state.bufferSize;
     const overflow = Math.max(0, bytes.length - buf);
@@ -225,7 +253,7 @@
     term([{ text: str }]);
 
     let step = 0;
-    const target = bytes.length / buf;
+    const target = Math.max(bytes.length / buf, 0.01);
     state.fillRatio = 0;
     const timer = setInterval(() => {
       step++;
@@ -245,79 +273,89 @@
         state.birdAlive = true;
         state.escaped = true;
         term([
-          { cls: "ok", text: `wrote ${len} bytes into buffer[${state.bufferSize}]` },
-          { cls: "ok", text: "canary intact — exit 0" },
+          { cls: "ok", text: `wrote ${len} B into buffer[${state.bufferSize}]` },
+          { cls: "ok", text: "canary intact — epilogue OK — exit 0" },
         ]);
         win(L.success);
       } else {
         state.birdAlive = false;
-        term([{ cls: "err", text: "too long — canary hit. Reset and stay ≤7 chars." }]);
-        say(L.hint);
-        state.locked = false;
-        termInput.disabled = false;
-        termInput.value = "";
-        termInput.focus();
+        term([{ cls: "err", text: "too long — canary hit. Still on CH.2 — try a shorter name." }]);
+        softFail(L.hint);
       }
     } else if (L.kind === "smash") {
-      if (overflow > 0 && L.guardOn) {
+      if (overflow > 0 && state.guardOn) {
         state.birdAlive = false;
         state.escaped = false;
         term([
-          { cls: "err", text: `OVERFLOW +${overflow}` },
-          { cls: "err", text: "*** stack smashing detected ***: aborted" },
-          { cls: "sys", text: "EXIT never used — canary did its job" },
+          { cls: "err", text: `OVERFLOW +${overflow} past buffer` },
+          { cls: "err", text: "epilogue: canary mismatch → __stack_chk_fail" },
+          { cls: "sys", text: "*** stack smashing detected *** — EXIT unused" },
         ]);
         win(L.success);
       } else {
-        term([{ cls: "sys", text: "Need a longer string to reach the bird." }]);
-        say(L.hint);
-        state.locked = false;
-        termInput.disabled = false;
-        termInput.value = "";
-        termInput.focus();
+        term([{ cls: "sys", text: "Still on CH.3 — need a longer string to reach the bird." }]);
+        softFail(L.hint);
       }
     } else if (L.kind === "hijack") {
       if (overflow > 8) {
         state.guardOn = false;
         state.exitCorrupted = true;
-        state.escaped = false;
         term([
-          { cls: "err", text: `OVERFLOW +${overflow} — no canary installed` },
-          { cls: "err", text: "return address overwritten" },
+          { cls: "err", text: `OVERFLOW +${overflow} — no canary in frame` },
+          { cls: "err", text: "return address overwritten (silent)" },
         ]);
         win(L.success);
       } else {
-        term([{ cls: "sys", text: "Deeper — push past saved frame to hit RET (20+ chars)." }]);
-        say(L.hint);
-        state.locked = false;
-        termInput.disabled = false;
-        termInput.value = "";
-        termInput.focus();
+        term([{ cls: "sys", text: "Still on CH.4 — go deeper (20+ chars) to hit RET." }]);
+        softFail(L.hint);
       }
     }
     hud();
     Render.renderStack(stackView, state);
   }
 
+  function refreshTitle() {
+    const p = loadProgress();
+    if (p > 0 && p < window.LEVELS.length) {
+      btnContinue.hidden = false;
+      progressNote.textContent = `Saved at challenge ${p + 1} of ${window.LEVELS.length}`;
+    } else if (p >= window.LEVELS.length) {
+      btnContinue.hidden = true;
+      progressNote.textContent = "All challenges cleared — START OVER to replay";
+    } else {
+      btnContinue.hidden = true;
+      progressNote.textContent = "";
+    }
+  }
+
   function loop() {
     state.tick++;
-    // pass highlight flag for find challenge
-    const drawState = { ...state, highlightBird: state.highlightBird && state.birdAlive };
-    Render.drawMine(mineCanvas, drawState);
+    Render.drawMine(mineCanvas, {
+      ...state,
+      highlightBird: state.highlightBird && state.birdAlive,
+    });
     requestAnimationFrame(loop);
   }
 
-  $("btn-start").onclick = () => start(0);
-  $("btn-replay").onclick = () => start(0);
+  $("btn-start").onclick = () => {
+    saveProgress(0);
+    start(0);
+  };
+  btnContinue.onclick = () => start(loadProgress());
+  $("btn-replay").onclick = () => {
+    saveProgress(0);
+    start(0);
+  };
   btnNext.onclick = () => start(state.levelIndex + 1);
   btnHint.onclick = () => say(lvl().hint || "");
-  btnReset.onclick = () => reset();
+  btnReset.onclick = () => retryCurrent(); // RETRY this challenge only
   termForm.onsubmit = (e) => {
     e.preventDefault();
     onSubmit(termInput.value);
   };
 
   Render.drawTitleBird($("title-bird"));
+  refreshTitle();
   show(titleScreen);
   loop();
 })();

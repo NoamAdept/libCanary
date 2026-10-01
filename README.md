@@ -1,36 +1,33 @@
 # CANARY MINE
 
 <p align="center">
-  <strong>Learn stack canaries in 6 short defensive challenges</strong><br />
-  One goal per screen · mine visual matches the lesson · optional stack/C peek
+  <strong>6 defensive challenges about stack canaries</strong><br />
+  Full-screen split: mine + stack | C code · progress saved on fail
 </p>
 
 <p align="center">
-  <img src="docs/images/canary-mine.png" alt="CANARY MINE gameplay" width="640" />
+  <img src="docs/images/canary-mine.png" alt="CANARY MINE" width="720" />
 </p>
 
 ## Quick start
 
 ```bash
-make all
-make game   # http://localhost:8080
+make all && make game   # http://localhost:8080
 ```
 
 ## Challenges
 
-| # | Name | You do |
-|--:|------|--------|
-| 1 | Find the bird | Name what sits between buffer and EXIT |
-| 2 | Safe cargo | Short input — canary stays alive |
-| 3 | Smash alarm | Overflow and **observe** the abort |
-| 4 | No guard | Same bug with protector off — EXIT falls |
-| 5 | Spot the bug | Pick the unsafe C call |
-| 6 | Pick the fix | Choose the defender build/API pattern |
+| # | Goal |
+|--:|------|
+| 1 | Find the canary between buffer and return address |
+| 2 | Safe short input — guard stays intact |
+| 3 | Overflow and **observe** `__stack_chk_fail` |
+| 4 | Same bug with protector off — EXIT falls |
+| 5 | Spot the unbounded C API |
+| 6 | Pick the defender build / API pattern |
 
-Real lesson binaries still live under `lessons/` / `bin/` for offline reading — the game teaches recognition and safe patterns, not exploitation.
+Failing a challenge retries **that** challenge only (progress is saved). This teaches recognition and hardening — not bypass techniques.
 
 ```bash
-make lessons
-./bin/L01_safe_copy alice
-make test-lessons
+make lessons && make test-lessons
 ```

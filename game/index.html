@@ -14,9 +14,13 @@
     <section id="title-screen" class="screen active">
       <div class="title-content">
         <h1 class="brand">CANARY<br />MINE</h1>
-        <p class="tagline">6 challenges. Spot the bird. Understand the guard.</p>
+        <p class="tagline">6 challenges · stack canaries · defensive only</p>
         <canvas id="title-bird" width="96" height="96" aria-hidden="true"></canvas>
-        <button id="btn-start" class="pixel-btn primary" type="button">START</button>
+        <div class="title-actions">
+          <button id="btn-continue" class="pixel-btn primary" type="button" hidden>CONTINUE</button>
+          <button id="btn-start" class="pixel-btn" type="button">START OVER</button>
+        </div>
+        <p id="progress-note" class="progress-note"></p>
       </div>
     </section>
 
@@ -31,41 +35,47 @@
       <p class="goal"><span class="goal-label">GOAL</span> <span id="goal">...</span></p>
       <p id="dialogue" class="dialogue">...</p>
 
-      <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Coal mine with canary"></canvas>
-
-      <div id="choices" class="choices" hidden></div>
-
-      <div id="terminal" class="terminal" hidden>
-        <div id="term-output" class="term-output"></div>
-        <form id="term-form" class="term-form" autocomplete="off">
-          <span class="prompt">&gt;</span>
-          <input id="term-input" type="text" maxlength="64" spellcheck="false" placeholder="answer then ENTER" />
-        </form>
+      <div class="split">
+        <div class="pane left-pane">
+          <div class="pane-title">MINE / STACK</div>
+          <canvas id="mine-canvas" width="480" height="240" role="img" aria-label="Coal mine with canary"></canvas>
+          <div id="stack-view" class="stack-view"></div>
+        </div>
+        <div class="pane right-pane">
+          <div class="pane-title">C CODE · <span id="binary-name"></span></div>
+          <pre id="code-view" class="code-view"></pre>
+          <p id="fact" class="fact"></p>
+        </div>
       </div>
 
-      <div class="actions">
-        <button id="btn-hint" class="pixel-btn" type="button">HINT</button>
-        <button id="btn-reset" class="pixel-btn" type="button">RESET</button>
-        <button id="btn-next" class="pixel-btn primary" type="button" hidden>NEXT ▶</button>
+      <div class="dock">
+        <div id="choices" class="choices" hidden></div>
+        <div id="terminal" class="terminal" hidden>
+          <div id="term-output" class="term-output"></div>
+          <form id="term-form" class="term-form" autocomplete="off">
+            <span class="prompt">&gt;</span>
+            <input id="term-input" type="text" maxlength="64" spellcheck="false" placeholder="answer then ENTER" />
+          </form>
+        </div>
+        <div class="actions">
+          <button id="btn-hint" class="pixel-btn" type="button">HINT</button>
+          <button id="btn-reset" class="pixel-btn" type="button">RETRY</button>
+          <button id="btn-next" class="pixel-btn primary" type="button" hidden>NEXT ▶</button>
+        </div>
       </div>
 
-      <details id="peek" class="more">
-        <summary>Stack + C (optional)</summary>
-        <div id="stack-view" class="stack-view"></div>
-        <pre id="code-view" class="code-view"></pre>
-        <p class="meta"><code id="binary-name"></code></p>
-        <code id="compile-line" class="sr-only"></code>
-        <span id="code-file" class="sr-only"></span>
-        <span id="objective" class="sr-only"></span>
-        <span id="mine-mode" class="sr-only"></span>
-        <span id="stack-mode" class="sr-only"></span>
-      </details>
+      <!-- stubs for leftover ids -->
+      <span id="compile-line" class="sr-only"></span>
+      <span id="code-file" class="sr-only"></span>
+      <span id="objective" class="sr-only"></span>
+      <span id="mine-mode" class="sr-only"></span>
+      <span id="stack-mode" class="sr-only"></span>
     </section>
 
     <section id="win-screen" class="screen">
       <div class="title-content">
         <h1 class="brand small">CLEAR</h1>
-        <p class="tagline">The canary dies so the return address doesn't have to.</p>
+        <p class="tagline">Epilogue checks the bird before using EXIT. Mismatch → abort.</p>
         <button id="btn-replay" class="pixel-btn primary" type="button">AGAIN</button>
       </div>
     </section>
