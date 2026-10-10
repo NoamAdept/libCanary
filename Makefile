@@ -1,8 +1,17 @@
 CC ?= gcc
+AR ?= ar
 CFLAGS_COMMON := -O0 -g -Wall -Wextra -I lessons -I libcanary
 CFLAGS_PROT   := $(CFLAGS_COMMON) -fstack-protector-strong
 CFLAGS_OFF    := $(CFLAGS_COMMON) -fno-stack-protector
 CFLAGS_HARD   := -O2 -g -Wall -Wextra -I lessons -fstack-protector-strong -D_FORTIFY_SOURCE=2
+
+# Library build. The demos are deliberately built with -fno-stack-protector so
+# that libcanary is the ONLY canary present and it is unambiguous which guard
+# caught (or failed to catch) the overflow.
+LCDIR    := libcanary
+LCLIB    := $(LCDIR)/libcanary.a
+CFLAGS_LIB  := -O2 -g -Wall -Wextra -I $(LCDIR)
+CFLAGS_DEMO := -O0 -g -Wall -Wextra -fno-stack-protector -I $(LCDIR)
 
 BIN := bin
 LESSON_BINS := \
@@ -19,9 +28,24 @@ LESSON_BINS := \
 	$(BIN)/L11_safe_fgets \
 	$(BIN)/L12_hardening
 
-.PHONY: all lessons game serve bundle clean test-lessons
+DEMO_BINS := \
+	$(BIN)/demo/exploit_unprotected \
+	$(BIN)/demo/exploit_protected \
+	$(BIN)/demo/overflow_unprotected \
+	$(BIN)/demo/overflow_protected
 
-all: lessons bundle
+.PHONY: all lib lessons demo run-demo test game serve bundle clean test-lessons
+
+all: lib lessons bundle
+
+# ---------------------------------------------------------------------------
+# The library itself: a static archive students can link against.
+# ---------------------------------------------------------------------------
+lib: $(LCLIB)
+
+$(LCLIB): $(LCDIR)/canary.c $(LCDIR)/canary.h
+	$(CC) $(CFLAGS_LIB) -c -o $(LCDIR)/canary.o $(LCDIR)/canary.c
+	$(AR) rcs $@ $(LCDIR)/canary.o
 
 lessons: $(LESSON_BINS)
 
@@ -64,6 +88,38 @@ $(BIN)/L11_safe_fgets: lessons/L11_safe_fgets.c lessons/common.h | $(BIN)
 $(BIN)/L12_hardening: lessons/L12_hardening.c lessons/common.h | $(BIN)
 	$(CC) $(CFLAGS_HARD) -o $@ lessons/L12_hardening.c
 
+# ---------------------------------------------------------------------------
+# Before/after exploitation demos (see demo/README.md).
+# ---------------------------------------------------------------------------
+demo: $(DEMO_BINS)
+
+$(BIN)/demo:
+	mkdir -p $(BIN)/demo
+
+$(BIN)/demo/exploit_unprotected: demo/exploit_demo.c | $(BIN)/demo
+	$(CC) $(CFLAGS_DEMO) -o $@ demo/exploit_demo.c
+
+$(BIN)/demo/exploit_protected: demo/exploit_demo.c $(LCDIR)/canary.c $(LCDIR)/canary.h | $(BIN)/demo
+	$(CC) $(CFLAGS_DEMO) -DUSE_LIBCANARY -o $@ demo/exploit_demo.c $(LCDIR)/canary.c
+
+$(BIN)/demo/overflow_unprotected: demo/overflow_demo.c | $(BIN)/demo
+	$(CC) $(CFLAGS_DEMO) -o $@ demo/overflow_demo.c
+
+$(BIN)/demo/overflow_protected: demo/overflow_demo.c $(LCDIR)/canary.c $(LCDIR)/canary.h | $(BIN)/demo
+	$(CC) $(CFLAGS_DEMO) -DUSE_LIBCANARY -o $@ demo/overflow_demo.c $(LCDIR)/canary.c
+
+run-demo:
+	bash demo/run_demo.sh
+
+# ---------------------------------------------------------------------------
+# Unit tests for the library.
+# ---------------------------------------------------------------------------
+test: $(BIN)/test_canary
+	$(BIN)/test_canary
+
+$(BIN)/test_canary: tests/test_canary.c $(LCDIR)/canary.c $(LCDIR)/canary.h | $(BIN)
+	$(CC) $(CFLAGS_DEMO) -o $@ tests/test_canary.c $(LCDIR)/canary.c
+
 bundle:
 	python3 tools/bundle_lessons.py
 
@@ -83,3 +139,4 @@ test-lessons: lessons
 clean:
 	rm -rf $(BIN)
 	rm -f game/lesson_bundle.js
+	rm -f $(LCDIR)/canary.o $(LCLIB)
