@@ -23,10 +23,14 @@ The same material ships as real, compilable binaries under `bin/` so you can rei
 
 ## Features
 
+- **`libcanary`** — a real, linkable stack-canary library (`libcanary/`) you can
+  use to harden your own C/C++ functions, with a classic frame canary and a
+  deterministic guarded-buffer redzone
+- **Before/after exploitation demo** (`demo/`) — the same overflow hijacking a
+  program with no protection, then being caught cold by libcanary
 - **12 progressive levels** from safe copy through hardening flags
 - **Four synced views:** coal mine · stack frame · C lesson · terminal
 - **Real C sources** in `lessons/` with matching `make` targets
-- **libcanary** teaching library for a manual derived-canary lesson
 - Zero-build web game (`make game`) plus optional native binaries (`make lessons`)
 
 ## Quick start
@@ -47,6 +51,84 @@ Open [http://localhost:8080](http://localhost:8080), press **START**, and type i
 printf 'bob\n' | ./bin/L11_safe_fgets
 make test-lessons                         # smoke-test key binaries
 ```
+
+## The library: hardening your own code with `libcanary`
+
+A stack canary is a simple idea: **plant a random secret value in front of the
+thing you want to protect, then check it is still there before you trust that
+thing.** If a buffer overflow ran past its bounds, it had to trample the secret
+on the way — so a changed secret is proof of corruption. libcanary is that idea,
+written to be read: the whole mitigation is ~120 lines in
+[`libcanary/canary.c`](libcanary/canary.c).
+
+### Build and link
+
+```bash
+make lib            # builds libcanary/libcanary.a
+# then: cc your_app.c libcanary/libcanary.a -I libcanary -o your_app
+```
+
+or with CMake:
+
+```bash
+cmake -S . -B build && cmake --build build && ctest --test-dir build
+```
+
+### Two ways to use it
+
+**1 — classic frame canary** (what `-fstack-protector` does under the hood):
+
+```c
+#include "canary.h"
+
+void risky(const char *in) {
+    LC_GUARD;                              // plant the cookie at entry
+    char name[32];
+    strncpy(name, in, sizeof name - 1);
+    name[sizeof name - 1] = '\0';
+    /* ... */
+    LC_VERIFY();                           // check it before returning
+}
+```
+
+**2 — deterministic guarded buffer** (a redzone that always catches a linear
+overflow, whatever the compiler's stack layout):
+
+```c
+#include "canary.h"
+
+void handle(const char *in) {
+    LC_GUARDED(buf, 32);                   // 32-byte buffer + trailing guard
+    strcpy((char *)buf.data, in);          // untrusted copy
+    lc_buf_check(&buf);                     // aborts cleanly if the guard was hit
+    puts((char *)buf.data);
+}
+```
+
+The secret is drawn from the OS CSPRNG (`getrandom(2)` → `/dev/urandom` → an
+ASLR-seeded fallback), chosen once per process, and its low byte is forced to
+`0x00` so string copies can't reproduce or leak it. On corruption, libcanary
+prints a diagnostic and `abort()`s — it **fails closed**, never returning into a
+frame whose return address may be attacker-controlled. See
+[`libcanary/canary.h`](libcanary/canary.h) for the full API.
+
+## See it work: the before/after demo
+
+```bash
+make run-demo       # builds every demo twice and runs them side by side
+```
+
+One program, two builds from identical source — once unprotected, once hardened
+with libcanary:
+
+- **Control-flow hijack:** an overflow rewrites a function pointer. *Unprotected*
+  → attacker code runs. *Protected* → libcanary catches it before the call.
+- **Classic strcpy smash:** an 80-byte name into a 32-byte buffer. *Unprotected*
+  → segfault on return. *Protected* → clean, loud abort.
+
+The vulnerability is the same in both builds; the only difference is the canary.
+Full write-up in [`demo/README.md`](demo/README.md). Everything is local and
+self-contained.
 
 ## Curriculum
 
@@ -81,12 +163,15 @@ Safe input keeps the bird alive. Overflow turns into “toxic gas,” trips the 
 ## Repository layout
 
 ```text
-├── game/              # CANARY MINE web experience
+├── libcanary/         # The library: canary.c / canary.h (+ libcanary.a)
+├── demo/              # Before/after exploitation demos + run_demo.sh
+├── tests/             # Unit tests for the library (make test)
 ├── lessons/           # Twelve C lesson sources
-├── libcanary/         # Teaching canary plant / check / fail API
-├── bin/               # Built lesson binaries (via make lessons)
+├── game/              # CANARY MINE web experience
+├── bin/               # Built binaries (via make lessons / demo / test)
 ├── docs/images/       # README screenshots
 ├── tools/             # Source bundler for the game
+├── CMakeLists.txt     # CMake build for the library, demos, and tests
 └── Makefile
 ```
 
@@ -94,12 +179,16 @@ Safe input keeps the bird alive. Overflow turns into “toxic gas,” trips the 
 
 | Target | Description |
 |--------|-------------|
-| `make all` | Build binaries and regenerate `game/lesson_bundle.js` |
+| `make all` | Build the library, lesson binaries, and the game bundle |
+| `make lib` | Build the static library `libcanary/libcanary.a` |
+| `make demo` | Build the before/after exploitation demos |
+| `make run-demo` | Build and run the demos side by side |
+| `make test` | Build and run the library unit tests |
 | `make lessons` | Compile `bin/L01` … `bin/L12` |
 | `make bundle` | Embed lesson sources for the web UI |
 | `make game` | Serve the game on port 8080 |
 | `make test-lessons` | Smoke-test representative binaries |
-| `make clean` | Remove `bin/` and the generated bundle |
+| `make clean` | Remove build artifacts (`bin/`, `libcanary.a`, bundle) |
 
 ## Takeaways
 
