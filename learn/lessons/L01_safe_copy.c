@@ -1,6 +1,6 @@
 /* L01 — Safe short copy with stack protector ON
  * Binary: bin/L01_safe_copy
- * Build:  cc -O0 -fstack-protector-strong -o bin/L01_safe_copy lessons/L01_safe_copy.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L01_safe_copy learn/lessons/L01_safe_copy.c
  *
  * Lesson: When input fits the buffer, the canary stays intact and main returns normally.
  */

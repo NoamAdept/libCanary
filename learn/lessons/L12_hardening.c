@@ -1,7 +1,7 @@
 /* L12 — Hardening checklist binary (protector + fortified libc)
  * Binary: bin/L12_hardening
  * Build:  cc -O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2 \
- *            -o bin/L12_hardening lessons/L12_hardening.c
+ *            -o bin/L12_hardening learn/lessons/L12_hardening.c
  *
  * Lesson: Defense in depth — canaries + fortified unchecked copies + safe APIs.
  */

@@ -8,7 +8,7 @@ window.LEVELS = [
     name: "SAFE COPY",
     binary: "bin/L01_safe_copy",
     source: "L01_safe_copy.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L01_safe_copy lessons/L01_safe_copy.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L01_safe_copy learn/lessons/L01_safe_copy.c",
     objective: "Run L01: type a SHORT name (≤7 chars). Canary stays alive.",
     dialogue:
       "Lesson L01 — strncpy into buf[8] with protector ON. Keep cargo short so the bird never sees toxic gas.",
@@ -17,8 +17,8 @@ window.LEVELS = [
     bufferSize: 8,
     unlockNextOn: "safe",
     termIntro: [
-      { cls: "sys", text: "# L01 — lessons/L01_safe_copy.c" },
-      { cls: "cyan", text: "$ cc -fstack-protector-strong -o bin/L01_safe_copy lessons/L01_safe_copy.c" },
+      { cls: "sys", text: "# L01 — learn/lessons/L01_safe_copy.c" },
+      { cls: "cyan", text: "$ cc -fstack-protector-strong -o bin/L01_safe_copy learn/lessons/L01_safe_copy.c" },
       { cls: "cyan", text: "$ ./bin/L01_safe_copy" },
       { cls: "sys", text: "argv[1] name:" },
     ],
@@ -31,7 +31,7 @@ window.LEVELS = [
     name: "STRCPY SMASH",
     binary: "bin/L02_strcpy_overflow",
     source: "L02_strcpy_overflow.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L02_strcpy_overflow lessons/L02_strcpy_overflow.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L02_strcpy_overflow learn/lessons/L02_strcpy_overflow.c",
     objective: "Overflow with strcpy — watch *** stack smashing detected ***.",
     dialogue:
       "L02 uses strcpy with no bounds. Flood past 8 bytes. The bird dies so RET doesn't get hijacked.",
@@ -54,7 +54,7 @@ window.LEVELS = [
     name: "STACK LAYOUT",
     binary: "bin/L03_stack_layout",
     source: "L03_stack_layout.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L03_stack_layout lessons/L03_stack_layout.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L03_stack_layout learn/lessons/L03_stack_layout.c",
     objective: "Overflow again. Map mine zones → real stack slots.",
     dialogue:
       "L03 prints the buffer address. Overflow grows toward higher addresses: buf → canary → RBP → RET.",
@@ -78,7 +78,7 @@ window.LEVELS = [
     name: "GETS BANNED",
     binary: "bin/L04_gets_banned",
     source: "L04_gets_banned.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L04_gets_banned lessons/L04_gets_banned.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L04_gets_banned learn/lessons/L04_gets_banned.c",
     objective: "gets() cannot bound input — overflow on purpose.",
     dialogue:
       "L04 calls gets(buf). Removed from C11 for a reason: it will read until newline with no size limit. Flood it.",
@@ -102,7 +102,7 @@ window.LEVELS = [
     name: "SIZE MISMATCH",
     binary: "bin/L05_size_mismatch",
     source: "L05_size_mismatch.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L05_size_mismatch lessons/L05_size_mismatch.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L05_size_mismatch learn/lessons/L05_size_mismatch.c",
     objective: "Tiny buf[8], huge staging buffer — mismatch overflow.",
     dialogue:
       "L05 fgets into big[64] then strcpy into buf[8]. Size mismatch is a classic C footgun. Overflow it.",
@@ -125,7 +125,7 @@ window.LEVELS = [
     name: "EPILOGUE",
     binary: "bin/L06_epilogue_check",
     source: "L06_epilogue_check.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L06_epilogue_check lessons/L06_epilogue_check.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L06_epilogue_check learn/lessons/L06_epilogue_check.c",
     objective: "Overflow, then read the function epilogue canary check.",
     dialogue:
       "L06: before ret, the compiler compares the canary. Mismatch → __stack_chk_fail / abort. Watch the disassembly-style log.",
@@ -148,7 +148,7 @@ window.LEVELS = [
     name: "GUARD OFF",
     binary: "bin/L07_guard_off",
     source: "L07_guard_off.c",
-    compile: "cc -O0 -fno-stack-protector -o bin/L07_guard_off lessons/L07_guard_off.c",
+    compile: "cc -O0 -fno-stack-protector -o bin/L07_guard_off learn/lessons/L07_guard_off.c",
     objective: "Same overflow compiled with -fno-stack-protector. EXIT falls.",
     dialogue:
       "L07 disabled the bird. Overflow deep enough to hit RET. Silence instead of alarm — control-flow hijack.",
@@ -171,7 +171,7 @@ window.LEVELS = [
     name: "OFF-BY-ONE",
     binary: "bin/L08_off_by_one",
     source: "L08_off_by_one.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L08_off_by_one lessons/L08_off_by_one.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L08_off_by_one learn/lessons/L08_off_by_one.c",
     objective: "Type exactly 8 chars — buggy <= loop writes one past the end.",
     dialogue:
       "L08's loop uses <= and can write one byte past buf[7]. Off-by-ones often nick the canary's edge.",
@@ -195,7 +195,7 @@ window.LEVELS = [
     name: "STRNCPY NUL",
     binary: "bin/L09_strncpy_pitfall",
     source: "L09_strncpy_pitfall.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L09_strncpy_pitfall lessons/L09_strncpy_pitfall.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L09_strncpy_pitfall learn/lessons/L09_strncpy_pitfall.c",
     objective: "Type 8+ chars — strncpy may omit the terminating NUL.",
     dialogue:
       "L09: strncpy(buf, src, 8) with len≥8 leaves buf without '\\0'. printf then walks off the end. C string safety matters.",
@@ -220,7 +220,7 @@ window.LEVELS = [
     name: "LIBCANARY",
     binary: "bin/L10_libcanary",
     source: "L10_libcanary.c",
-    compile: "cc -O0 -fstack-protector-strong -pthread -o bin/L10_libcanary lessons/L10_libcanary.c libcanary/canary.c",
+    compile: "cc -O0 -fstack-protector-strong -I include -o bin/L10_libcanary learn/lessons/L10_libcanary.c src/canary.c",
     objective: "Safe name with a DERIVED canary (secret ⊕ frame) from libcanary.",
     dialogue:
       "L10 links your libcanary: canary_deriv / canary_check / canary_fail. Plant, use buffer, verify before return.",
@@ -245,7 +245,7 @@ window.LEVELS = [
     name: "SAFE FGETS",
     binary: "bin/L11_safe_fgets",
     source: "L11_safe_fgets.c",
-    compile: "cc -O0 -fstack-protector-strong -o bin/L11_safe_fgets lessons/L11_safe_fgets.c",
+    compile: "cc -O0 -fstack-protector-strong -o bin/L11_safe_fgets learn/lessons/L11_safe_fgets.c",
     objective: "Use the safe pattern — short name, fgets + snprintf mindset.",
     dialogue:
       "L11 is the rewrite: fgets(name, sizeof name, stdin) + snprintf. Bound every read and format. Type a short name.",
@@ -270,7 +270,7 @@ window.LEVELS = [
     name: "HARDENING",
     binary: "bin/L12_hardening",
     source: "L12_hardening.c",
-    compile: "cc -O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2 -o bin/L12_hardening lessons/L12_hardening.c",
+    compile: "cc -O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2 -o bin/L12_hardening learn/lessons/L12_hardening.c",
     objective: "Final run: short name under full hardening flags.",
     dialogue:
       "L12 checklist: -fstack-protector-strong, _FORTIFY_SOURCE=2, safe APIs, never disable canaries in prod. Enter a short name to finish the mine.",

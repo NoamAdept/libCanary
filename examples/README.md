@@ -1,4 +1,4 @@
-# libcanary demos — see the overflow, then see it stopped
+# libcanary examples — see the overflow, then see it stopped
 
 Two tiny programs, each compiled **twice** from the same source: once with no
 protection, once hardened with libcanary. Run them side by side and watch what
@@ -11,8 +11,8 @@ own address, so the result is identical on every machine.
 ## Run it
 
 ```bash
-make demo        # or: make run-demo  (builds + runs the whole comparison)
-bash demo/run_demo.sh
+make run-examples   # builds + runs the whole comparison
+bash examples/run_demo.sh
 ```
 
 ## What each demo shows

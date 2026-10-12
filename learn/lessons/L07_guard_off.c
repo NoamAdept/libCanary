@@ -1,6 +1,6 @@
 /* L07 — Stack protector DISABLED (−fno-stack-protector)
  * Binary: bin/L07_guard_off
- * Build:  cc -O0 -fno-stack-protector -o bin/L07_guard_off lessons/L07_guard_off.c
+ * Build:  cc -O0 -fno-stack-protector -o bin/L07_guard_off learn/lessons/L07_guard_off.c
  *
  * Lesson: Same overflow with no bird. Return address can be corrupted silently.
  */

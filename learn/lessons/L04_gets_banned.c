@@ -1,6 +1,6 @@
 /* L04 — gets() is banned (unbounded stdin read)
  * Binary: bin/L04_gets_banned
- * Build:  cc -O0 -fstack-protector-strong -o bin/L04_gets_banned lessons/L04_gets_banned.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L04_gets_banned learn/lessons/L04_gets_banned.c
  *
  * Lesson: gets() cannot limit input length. Never use it — prefer fgets().
  * (libc no longer provides gets; this shim recreates the same unbounded hazard.)

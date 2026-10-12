@@ -1,6 +1,6 @@
 /* L11 — Safe rewrite: fgets + snprintf (no unbounded copy)
  * Binary: bin/L11_safe_fgets
- * Build:  cc -O0 -fstack-protector-strong -o bin/L11_safe_fgets lessons/L11_safe_fgets.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L11_safe_fgets learn/lessons/L11_safe_fgets.c
  *
  * Lesson: Bound every read and every format. This is the pattern to ship.
  */

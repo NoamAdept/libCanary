@@ -1,6 +1,6 @@
 /* L02 — Unbounded strcpy overflow → stack smashing detected
  * Binary: bin/L02_strcpy_overflow
- * Build:  cc -O0 -fstack-protector-strong -o bin/L02_strcpy_overflow lessons/L02_strcpy_overflow.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L02_strcpy_overflow learn/lessons/L02_strcpy_overflow.c
  *
  * Lesson: strcpy does not know the destination size. Long input kills the canary.
  */

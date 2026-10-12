@@ -1,131 +1,73 @@
 CC ?= gcc
 AR ?= ar
-CFLAGS_COMMON := -O0 -g -Wall -Wextra -I lessons -I libcanary
-CFLAGS_PROT   := $(CFLAGS_COMMON) -fstack-protector-strong
-CFLAGS_OFF    := $(CFLAGS_COMMON) -fno-stack-protector
-CFLAGS_HARD   := -O2 -g -Wall -Wextra -I lessons -fstack-protector-strong -D_FORTIFY_SOURCE=2
-
-# Library build. The demos are deliberately built with -fno-stack-protector so
-# that libcanary is the ONLY canary present and it is unambiguous which guard
-# caught (or failed to catch) the overflow.
-LCDIR    := libcanary
-LCLIB    := $(LCDIR)/libcanary.a
-CFLAGS_LIB  := -O2 -g -Wall -Wextra -I $(LCDIR)
-CFLAGS_DEMO := -O0 -g -Wall -Wextra -fno-stack-protector -I $(LCDIR)
 
 BIN := bin
-LESSON_BINS := \
-	$(BIN)/L01_safe_copy \
-	$(BIN)/L02_strcpy_overflow \
-	$(BIN)/L03_stack_layout \
-	$(BIN)/L04_gets_banned \
-	$(BIN)/L05_size_mismatch \
-	$(BIN)/L06_epilogue_check \
-	$(BIN)/L07_guard_off \
-	$(BIN)/L08_off_by_one \
-	$(BIN)/L09_strncpy_pitfall \
-	$(BIN)/L10_libcanary \
-	$(BIN)/L11_safe_fgets \
-	$(BIN)/L12_hardening
-
-DEMO_BINS := \
-	$(BIN)/demo/exploit_unprotected \
-	$(BIN)/demo/exploit_protected \
-	$(BIN)/demo/overflow_unprotected \
-	$(BIN)/demo/overflow_protected
-
-.PHONY: all lib lessons demo run-demo test game serve bundle clean test-lessons
-
-all: lib lessons bundle
+LIB := lib/libcanary.a
 
 # ---------------------------------------------------------------------------
-# The library itself: a static archive students can link against.
+# The library
 # ---------------------------------------------------------------------------
-lib: $(LCLIB)
+CFLAGS_LIB := -O2 -g -Wall -Wextra -I include
 
-$(LCLIB): $(LCDIR)/canary.c $(LCDIR)/canary.h
-	$(CC) $(CFLAGS_LIB) -c -o $(LCDIR)/canary.o $(LCDIR)/canary.c
-	$(AR) rcs $@ $(LCDIR)/canary.o
+# Examples and tests are built with the compiler's protector OFF so libcanary
+# is the ONLY canary present and it is unambiguous which guard caught (or
+# failed to catch) the overflow.
+CFLAGS_DEMO := -O0 -g -Wall -Wextra -fno-stack-protector -I include
 
-lessons: $(LESSON_BINS)
+.PHONY: all lib test examples run-examples lessons test-lessons bundle game clean
 
-$(BIN):
-	mkdir -p $(BIN)
+all: lib test
 
-$(BIN)/L01_safe_copy: lessons/L01_safe_copy.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L01_safe_copy.c
+lib: $(LIB)
 
-$(BIN)/L02_strcpy_overflow: lessons/L02_strcpy_overflow.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L02_strcpy_overflow.c
+$(LIB): src/canary.c include/canary.h
+	mkdir -p lib
+	$(CC) $(CFLAGS_LIB) -c -o lib/canary.o src/canary.c
+	$(AR) rcs $@ lib/canary.o
 
-$(BIN)/L03_stack_layout: lessons/L03_stack_layout.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L03_stack_layout.c
-
-$(BIN)/L04_gets_banned: lessons/L04_gets_banned.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L04_gets_banned.c
-
-$(BIN)/L05_size_mismatch: lessons/L05_size_mismatch.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L05_size_mismatch.c
-
-$(BIN)/L06_epilogue_check: lessons/L06_epilogue_check.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L06_epilogue_check.c
-
-$(BIN)/L07_guard_off: lessons/L07_guard_off.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_OFF) -o $@ lessons/L07_guard_off.c
-
-$(BIN)/L08_off_by_one: lessons/L08_off_by_one.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L08_off_by_one.c
-
-$(BIN)/L09_strncpy_pitfall: lessons/L09_strncpy_pitfall.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L09_strncpy_pitfall.c
-
-$(BIN)/L10_libcanary: lessons/L10_libcanary.c libcanary/canary.c libcanary/canary.h lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -pthread -o $@ lessons/L10_libcanary.c libcanary/canary.c
-
-$(BIN)/L11_safe_fgets: lessons/L11_safe_fgets.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_PROT) -o $@ lessons/L11_safe_fgets.c
-
-$(BIN)/L12_hardening: lessons/L12_hardening.c lessons/common.h | $(BIN)
-	$(CC) $(CFLAGS_HARD) -o $@ lessons/L12_hardening.c
-
-# ---------------------------------------------------------------------------
-# Before/after exploitation demos (see demo/README.md).
-# ---------------------------------------------------------------------------
-demo: $(DEMO_BINS)
-
-$(BIN)/demo:
-	mkdir -p $(BIN)/demo
-
-$(BIN)/demo/exploit_unprotected: demo/exploit_demo.c | $(BIN)/demo
-	$(CC) $(CFLAGS_DEMO) -o $@ demo/exploit_demo.c
-
-$(BIN)/demo/exploit_protected: demo/exploit_demo.c $(LCDIR)/canary.c $(LCDIR)/canary.h | $(BIN)/demo
-	$(CC) $(CFLAGS_DEMO) -DUSE_LIBCANARY -o $@ demo/exploit_demo.c $(LCDIR)/canary.c
-
-$(BIN)/demo/overflow_unprotected: demo/overflow_demo.c | $(BIN)/demo
-	$(CC) $(CFLAGS_DEMO) -o $@ demo/overflow_demo.c
-
-$(BIN)/demo/overflow_protected: demo/overflow_demo.c $(LCDIR)/canary.c $(LCDIR)/canary.h | $(BIN)/demo
-	$(CC) $(CFLAGS_DEMO) -DUSE_LIBCANARY -o $@ demo/overflow_demo.c $(LCDIR)/canary.c
-
-run-demo:
-	bash demo/run_demo.sh
-
-# ---------------------------------------------------------------------------
-# Unit tests for the library.
-# ---------------------------------------------------------------------------
 test: $(BIN)/test_canary
 	$(BIN)/test_canary
 
-$(BIN)/test_canary: tests/test_canary.c $(LCDIR)/canary.c $(LCDIR)/canary.h | $(BIN)
-	$(CC) $(CFLAGS_DEMO) -o $@ tests/test_canary.c $(LCDIR)/canary.c
+$(BIN)/test_canary: tests/test_canary.c $(LIB) | $(BIN)
+	$(CC) $(CFLAGS_DEMO) -o $@ tests/test_canary.c $(LIB)
 
-bundle:
-	python3 tools/bundle_lessons.py
+# ---------------------------------------------------------------------------
+# Examples: each program built twice, unprotected vs libcanary-protected
+# (see examples/README.md)
+# ---------------------------------------------------------------------------
+EXAMPLE_BINS := $(foreach n,exploit overflow,$(BIN)/examples/$(n)_unprotected $(BIN)/examples/$(n)_protected)
 
-game serve: bundle
-	@echo "CANARY MINE → http://localhost:8080"
-	python3 -m http.server 8080 --directory game
+examples: $(EXAMPLE_BINS)
+
+$(BIN)/examples/%_unprotected: examples/%_demo.c | $(BIN)/examples
+	$(CC) $(CFLAGS_DEMO) -o $@ $<
+
+$(BIN)/examples/%_protected: examples/%_demo.c $(LIB) | $(BIN)/examples
+	$(CC) $(CFLAGS_DEMO) -DUSE_LIBCANARY -o $@ $< $(LIB)
+
+run-examples:
+	bash examples/run_demo.sh
+
+# ---------------------------------------------------------------------------
+# Learning material: lesson binaries + CANARY MINE web game (see learn/)
+# ---------------------------------------------------------------------------
+LESSON_NAMES := L01_safe_copy L02_strcpy_overflow L03_stack_layout \
+	L04_gets_banned L05_size_mismatch L06_epilogue_check L07_guard_off \
+	L08_off_by_one L09_strncpy_pitfall L10_libcanary L11_safe_fgets L12_hardening
+LESSON_BINS := $(addprefix $(BIN)/,$(LESSON_NAMES))
+
+CFLAGS_LESSON := -O0 -g -Wall -Wextra -I learn/lessons -I include -fstack-protector-strong
+
+# Per-lesson overrides: L07 turns the protector off, L12 shows release hardening.
+$(BIN)/L07_guard_off: CFLAGS_LESSON := -O0 -g -Wall -Wextra -I learn/lessons -fno-stack-protector
+$(BIN)/L12_hardening: CFLAGS_LESSON := -O2 -g -Wall -Wextra -I learn/lessons -fstack-protector-strong -D_FORTIFY_SOURCE=2
+$(BIN)/L10_libcanary: LESSON_EXTRA := src/canary.c
+$(BIN)/L10_libcanary: src/canary.c include/canary.h
+
+lessons: $(LESSON_BINS)
+
+$(BIN)/L%: learn/lessons/L%.c learn/lessons/common.h | $(BIN)
+	$(CC) $(CFLAGS_LESSON) -o $@ $< $(LESSON_EXTRA)
 
 test-lessons: lessons
 	@echo "== L01 safe ==" && $(BIN)/L01_safe_copy alice
@@ -136,7 +78,17 @@ test-lessons: lessons
 	@echo "== L12 harden ==" && $(BIN)/L12_hardening miner
 	@echo "lesson smoke tests done"
 
+bundle:
+	python3 learn/bundle_lessons.py
+
+game: bundle
+	@echo "CANARY MINE → http://localhost:8080"
+	python3 -m http.server 8080 --directory learn/game
+
+# ---------------------------------------------------------------------------
+
+$(BIN) $(BIN)/examples:
+	mkdir -p $@
+
 clean:
-	rm -rf $(BIN)
-	rm -f game/lesson_bundle.js
-	rm -f $(LCDIR)/canary.o $(LCLIB)
+	rm -rf $(BIN) lib learn/game/lesson_bundle.js
