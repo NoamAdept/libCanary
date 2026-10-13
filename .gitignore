@@ -3,3 +3,5 @@ build/
 *.o
 *.a
 .DS_Store
+learn/game/lesson_bundle.js
+lib/

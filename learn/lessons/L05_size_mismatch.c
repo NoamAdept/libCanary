@@ -1,6 +1,6 @@
 /* L05 — Buffer size mismatch: tiny stack buf, huge read
  * Binary: bin/L05_size_mismatch
- * Build:  cc -O0 -fstack-protector-strong -o bin/L05_size_mismatch lessons/L05_size_mismatch.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L05_size_mismatch learn/lessons/L05_size_mismatch.c
  *
  * Lesson: Declaring char buf[8] then reading with a larger limit (or none) is a classic bug.
  */

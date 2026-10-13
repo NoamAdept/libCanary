@@ -1,6 +1,6 @@
 /* L08 — Off-by-one: write one byte past the end
  * Binary: bin/L08_off_by_one
- * Build:  cc -O0 -fstack-protector-strong -o bin/L08_off_by_one lessons/L08_off_by_one.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L08_off_by_one learn/lessons/L08_off_by_one.c
  *
  * Lesson: Loops using <= length or writing the NUL past the last index corrupt neighbors
  * (often the canary's low byte on some layouts).

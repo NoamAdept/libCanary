@@ -1,6 +1,6 @@
 /* L03 — Same overflow, annotated stack layout
  * Binary: bin/L03_stack_layout
- * Build:  cc -O0 -fstack-protector-strong -o bin/L03_stack_layout lessons/L03_stack_layout.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L03_stack_layout learn/lessons/L03_stack_layout.c
  *
  * Lesson: Visualize [buffer][canary][saved RBP][return addr] growth direction.
  */

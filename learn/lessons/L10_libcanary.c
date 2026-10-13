@@ -1,11 +1,11 @@
 /* L10 — Manual canary with libcanary (derived secret ⊕ frame)
  * Binary: bin/L10_libcanary
- * Build:  see Makefile (links libcanary/canary.c)
+ * Build:  see Makefile (links src/canary.c)
  *
  * Lesson: Plant a derived canary, check before return — mirrors compiler SSP.
  */
 #include "common.h"
-#include "../libcanary/canary.h"
+#include "canary.h"
 
 void guarded(const char *src) {
     char buf[BUF_SMALL];

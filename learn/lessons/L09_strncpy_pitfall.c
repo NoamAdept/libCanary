@@ -1,6 +1,6 @@
 /* L09 — strncpy without forced NUL termination
  * Binary: bin/L09_strncpy_pitfall
- * Build:  cc -O0 -fstack-protector-strong -o bin/L09_strncpy_pitfall lessons/L09_strncpy_pitfall.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L09_strncpy_pitfall learn/lessons/L09_strncpy_pitfall.c
  *
  * Lesson: strncpy may omit the terminating NUL when src length >= n.
  * Always set buf[n-1] = '\\0' (or use safer APIs).

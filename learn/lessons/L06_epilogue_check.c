@@ -1,6 +1,6 @@
 /* L06 — Function epilogue canary check (smash → abort)
  * Binary: bin/L06_epilogue_check
- * Build:  cc -O0 -fstack-protector-strong -o bin/L06_epilogue_check lessons/L06_epilogue_check.c
+ * Build:  cc -O0 -fstack-protector-strong -o bin/L06_epilogue_check learn/lessons/L06_epilogue_check.c
  *
  * Lesson: Before ret, the compiler emits a canary check. Mismatch → __stack_chk_fail.
  */
